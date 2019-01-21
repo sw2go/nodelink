@@ -15,4 +15,8 @@ cd nlclient                     ... go to the created project
 npm install                     ... ensure  
 ng serve                        ... test 
 
+git add -A
+git commit -m "initial setup"   ... got 'origin/master', but the upstream is gone. (use "git branch --unset-upstream" to fixup)
+git branch --unset-upstream     ... an then 
+git push -u origin master       ... did the trick
 
