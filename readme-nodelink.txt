@@ -18,5 +18,5 @@ ng serve                        ... test
 git add -A                      ... stage
 git commit -m "initial setup"   ... commit but got 'origin/master', but the upstream is gone. (use "git branch --unset-upstream" to fixup)
 git branch --unset-upstream     ... an then 
-git push -u origin master       ... did the trick
+git push -u origin master       ... did the trick   ( -u sets upstream )
 
