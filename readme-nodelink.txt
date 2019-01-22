@@ -11,10 +11,11 @@ cd C:\@github\sw2go             ... go to where you locally want your repo to be
 git clone https://github.com/sw2go/nodelink.git
 cd C:\@github\sw2go\nodelink    ... go to the git working-tree 
 
-npm install @angular/cli@6      ... install the angular version you need for the project
+npm install @angular/cli        ... install the angular version you need for the project
 ng --version                    ... check angular/cli version
-ng new nlclient                 ... create the project 
+ng new nlclient                 ... create the project, use --style=scss --routing
 rmdir node_modules /s           ... remove the previously installed cli again
+del package-lock.json               and the lock
 
 cd nlclient                     ... go to the created project
 npm install                     ... ensure  
@@ -24,6 +25,19 @@ git add -A                      ... stage
 git commit -m "initial setup"   ... commit but got 'origin/master', but the upstream is gone. (use "git branch --unset-upstream" to fixup)
 git branch --unset-upstream     ... an then 
 git push -u origin master       ... did the trick   ( -u sets upstream )
+
+
+copy projects folder from C:\@githubsw2go\ngx-graph\projects to nlclient
+add the "@swimlane/ngx-graph" section to projects in angular.json
+add import { version } and version to environment.ts
+add allowSyntheticDefaultImports and following to tsconfig.json
+add "@swimlane/ngx-charts": "^10.0.0" to dependencies in package.json
+add "d3-dispatch" and following to dependencies in package.json
+add  "@angular/cdk": "~7.2.0" to dependencies in package.json
+
+add BrowserAnimationsModule to app.module.ts
+add NgxGraphModule to app.module.ts
+
 
 
 npm install @swimlane/ngx-graph --save
