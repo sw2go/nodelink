@@ -1,5 +1,10 @@
 initial project setup process
 -----------------------------
+npm install @angular/cli@1      ... Angular 5 CLI
+npm install @angular/cli@6      ... Angular 6 CLI
+npm install @angular/cli@7      ... Angular 7 CLI
+
+
 
 create new repo "nodelink" on github
 cd C:\@github\sw2go             ... go to where you locally want your repo to be created
