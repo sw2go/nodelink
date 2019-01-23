@@ -1,15 +1,33 @@
 <ngx-graph
   class="chart-container"
-  [view]="[1500, 1200]"
+  [view]="[800, 800]"
   [links]="linkitems"
   [nodes]="nodeitems"
+  [update$]="update$"
+  [layout]="dagre"
+  [draggingEnabled]="true"
+  [autoCenter]="false"
+  (activate)="onClick($event)"
+
+  
 >
+
+<!--
+  (select)="onClick($event)"
+
+  (deactivate)="onClick($event)"
+  
+
+-->
+
+
+
 <ng-template #nodeTemplate let-node>
   <svg:g class="node">
     <svg:rect
       [attr.width]="node.dimension.width"
       [attr.height]="node.dimension.height"
-      [attr.fill]="node.data.color"
+      [attr.fill]="node.data.color"      
     />
     <svg:text alignment-baseline="central" [attr.x]="10" [attr.y]="node.dimension.height / 2">
       {{node.label}}
@@ -32,4 +50,5 @@
   </svg:g>
 </ng-template>
 </ngx-graph>
-<button (click)="addNode()">Add Node</button>
+<button (click)="addNode()">Add</button>
+<button (click)="redraw()">Redraw</button>

@@ -43,3 +43,19 @@ add NgxGraphModule to app.module.ts
 npm install @swimlane/ngx-graph --save
 npm install @angular/cdk@6 --save
 npm install d3 --save
+
+
+
+Firefox issues:
+---------------
+[WDS] Disconnected! in sockjs.js / zone.js
+Hack! in angular.json at "architect", "serve", "options" set "disableHostCheck": true
+
+ReferenceError: TouchEvent is not defined
+./projects/swimlane/ngx-graph/src/lib/graph/graph.component.ts:958:22
+
+Hack! commented out the @HostListener('document:touchmove', ['$event']) in graph.component.ts
+
+General Tips:
+Check Source-Code of graph.component.ts and other classes in the projects folder.
+

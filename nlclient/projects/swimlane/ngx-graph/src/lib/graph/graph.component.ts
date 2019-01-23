@@ -954,7 +954,9 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
    * On touch move event, used for panning.
    *
    */
+  /* due to firefox problem
   @HostListener('document:touchmove', ['$event'])
+  */
   onTouchMove($event: TouchEvent): void {
     if (this.isPanning && this.panningEnabled) {
       const clientX = $event.changedTouches[0].clientX;
@@ -967,6 +969,7 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
       this.pan(movementX, movementY);
     }
   }
+  
 
   /**
    * On touch end event to disable panning.
