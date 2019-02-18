@@ -9,8 +9,9 @@ import { Layout } from '@swimlane/ngx-graph/lib/models';
 import { DagreSettings, Orientation } from '@swimlane/ngx-graph/lib/graph/layouts/dagre';
 
 import { BehaviorSubject, fromEvent, of } from 'rxjs';
-import { map,  filter, distinctUntilChanged, switchMap, tap, startWith, delay, merge, groupBy, mergeAll } from 'rxjs/operators';
+import { map,  filter, distinctUntilChanged, switchMap, tap, startWith, delay, merge, groupBy, mergeAll, concat, concatMap, mergeMap, exhaustMap, debounce } from 'rxjs/operators';
 import { ThrowStmt } from '@angular/compiler';
+import { group } from '@angular/animations';
 
 const keyDowns = fromEvent(document, "keydown");
 const keyUps = fromEvent(document, "keydown");
@@ -21,6 +22,10 @@ const keyPress = keyDowns.pipe(
   distinctUntilChanged((e: any) => e.type)
 );
 
+const fkey = fromEvent(document, "keydown").pipe(filter((d:any) => d.key == 'f'),
+  switchMap((d:any) => of(d).pipe(merge(fromEvent(document, 'keyup').pipe(filter((u:any) => u.key == d.key)))))
+  
+)
 
 
 
@@ -28,6 +33,11 @@ const keyPress = keyDowns.pipe(
 const __ldn = fromEvent(document, 'keydown').pipe(filter((x: any) => x.key == "l"), distinctUntilChanged((x,y) => x.key==y.key));
 const lup = fromEvent(document, 'keyup').pipe(startWith({key: "l"}), filter((x: any) => x.key == "l"));
 const ldn = lup.pipe(switchMap((x) => __ldn ));
+
+const l = lup.pipe(merge(ldn));
+
+//const cl = fromEvent(document, 'keydown').pipe(distinctUntilChanged((x: any ,y: any) => x.key==y.key)
+
 
 const __adn = fromEvent(document, 'keydown').pipe(filter((x: any) => x.key == "a"), distinctUntilChanged((x,y) => x.key==y.key));
 const aup = fromEvent(document, 'keyup').pipe(startWith({key: "a"}), filter((x: any) => x.key == "a"));
@@ -60,12 +70,19 @@ export class MygraphComponent implements OnInit, AfterViewInit {
 
   constructor(private layoutsrv: LayoutService) { 
 
+ 
     this.layout = layoutsrv.getLayout("dagre"); // "dagreCluster" , "dagreNodesOnly", "d3ForceDirected",  "colaForceDirected"
     let s: DagreSettings = this.layout.settings;
     s.orientation = Orientation.TOP_TO_BOTTOM;
     
     this.id = 0;
   }
+
+  svgClick(e: any) {
+    console.log("svg clicked");
+  }
+
+  
 
   newNodeId(): string {
     return "N" + ++this.id;
@@ -106,15 +123,30 @@ export class MygraphComponent implements OnInit, AfterViewInit {
       this.current = n;
     });
 
+    //press.subscribe( x => console.log(x));
 
-    keyPress.subscribe( x => console.log(x));
 
+
+
+
+    fkey.subscribe( x => console.log(x));
+
+    
+
+
+
+    this.graph.select.subscribe( x=> {
+      
+    }
+
+
+    );
 
     ldn.pipe(
       map(() => { let items: NodeItem[] = []; return items;} ),
       switchMap(items => this.graph.select.pipe(map((n: NodeItem ) => { 
-        if (items.length==2) { items = []; }
-        if (!items.includes(n)){ items.push(n); } 
+        if (items.length==2) { items = []; console.log("clear");}
+        if (!items.includes(n)){ items.push(n); console.log(n.label);      } 
         return items; 
       }))),
       filter(items => items.length > 1)
@@ -131,14 +163,13 @@ export class MygraphComponent implements OnInit, AfterViewInit {
 
 
 
-
+  /*  nicht nötig wenn man nichts im resize machen will
     resize.subscribe((x: any) => {
-      this.graph.view = [ window.innerWidth *0.66  , window.innerHeight - 100];
-      this.update$.next(null);
+      this.update$.next(null); // kann muss aber nicht
     });
 
     of('dummy').pipe(delay(2)).subscribe(x => window.dispatchEvent(new Event('resize')));
-  
+  */
   }
 
 

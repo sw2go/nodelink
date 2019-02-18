@@ -7,10 +7,12 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { MygraphComponent } from './mygraph/mygraph.component';
 
+
+
 @NgModule({
   declarations: [
     AppComponent,
-    MygraphComponent
+    MygraphComponent    
   ],
   imports: [
     BrowserModule,
