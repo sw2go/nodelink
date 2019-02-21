@@ -1,6 +1,6 @@
 import { Component, OnInit, AfterViewInit, ViewChild } from '@angular/core';
-import { NodeItem } from './../model/node';
-import { LinkItem } from './../model/link';
+import { NodeItem } from './../model/nodeitem';
+import { LinkItem } from './../model/linkitem';
 import { Node } from '@swimlane/ngx-graph/lib/models';
 
 import { LayoutService } from '@swimlane/ngx-graph/lib/graph/layouts/layout.service';
@@ -10,8 +10,13 @@ import { DagreSettings, Orientation } from '@swimlane/ngx-graph/lib/graph/layout
 
 import { BehaviorSubject, fromEvent, of } from 'rxjs';
 import { map,  filter, distinctUntilChanged, switchMap, tap, startWith, delay, merge, groupBy, mergeAll, concat, concatMap, mergeMap, exhaustMap, debounce } from 'rxjs/operators';
-import { ThrowStmt } from '@angular/compiler';
 import { group } from '@angular/animations';
+import { NodeService } from '../service/node.service';
+
+import { BsModalRef, BsModalService, ModalOptions } from 'ngx-bootstrap/modal';
+import { ModalAddNodeComponent } from '../modal-add-node/modal-add-node.component';
+import { CtxType, ContextMenuData } from '../model/contextmenudata';
+import { Item } from '../model/item';
 
 const keyDowns = fromEvent(document, "keydown");
 const keyUps = fromEvent(document, "keydown");
@@ -24,7 +29,6 @@ const keyPress = keyDowns.pipe(
 
 const fkey = fromEvent(document, "keydown").pipe(filter((d:any) => d.key == 'f'),
   switchMap((d:any) => of(d).pipe(merge(fromEvent(document, 'keyup').pipe(filter((u:any) => u.key == d.key)))))
-  
 )
 
 
@@ -53,13 +57,15 @@ const resize = fromEvent(window, 'resize');
 })
 export class MygraphComponent implements OnInit, AfterViewInit {
 
+  modalRef: BsModalRef;
+
+
   current: NodeItem;
 
   @ViewChild(GraphComponent) 
   graph: GraphComponent;
 
 
-  id: number = 0;
   lid: number = 0;
   layout: Layout;
   nodeitems: NodeItem[] = [];
@@ -68,52 +74,16 @@ export class MygraphComponent implements OnInit, AfterViewInit {
 
   update$: BehaviorSubject<any>;
 
-  constructor(private layoutsrv: LayoutService) { 
-
- 
-    this.layout = layoutsrv.getLayout("dagre"); // "dagreCluster" , "dagreNodesOnly", "d3ForceDirected",  "colaForceDirected"
-    let s: DagreSettings = this.layout.settings;
-    s.orientation = Orientation.TOP_TO_BOTTOM;
-    
-    this.id = 0;
-  }
-
-  svgClick(e: any) {
-    console.log("svg clicked");
-  }
-
-  
-
-  newNodeId(): string {
-    return "N" + ++this.id;
-  }
-  newLinkId(): string {
-    return "L" + ++this.lid;
+  constructor(private layoutservice: LayoutService, private nodeservice: NodeService, private modalservice: BsModalService) { 
+    this.layout = layoutservice.getLayout("dagre"); // "dagreCluster" , "dagreNodesOnly", "d3ForceDirected",  "colaForceDirected"  
+    let dagreLayoutSettings: DagreSettings = this.layout.settings;
+    dagreLayoutSettings.orientation = Orientation.TOP_TO_BOTTOM;
   }
 
   ngOnInit() {
 
-    
-    let n1: NodeItem = new NodeItem(this.newNodeId(), "N1");
-    let n2: NodeItem = new NodeItem(this.newNodeId(), "N2");
-    let n3: NodeItem = new NodeItem(this.newNodeId(), "N3");
-    let n4: NodeItem = new NodeItem(this.newNodeId(), "N4");
-
-    let l1: LinkItem = new LinkItem(this.newLinkId(),n1.id, n2.id, "L1")
-    let l2: LinkItem = new LinkItem(this.newLinkId(),n1.id, n3.id, "L2")
-    let l3: LinkItem = new LinkItem(this.newLinkId(),n1.id, n4.id, "L3")
-   
-    this.nodeitems.push(n1);
-    this.nodeitems.push(n2);
-    this.nodeitems.push(n3);
-    this.nodeitems.push(n4);
-
-
-    this.linkitems.push(l1);    
-    this.linkitems.push(l2);
-    this.linkitems.push(l3);
-  
     this.update$ = new BehaviorSubject<any>(null);
+    this.reload();  
   }
 
   ngAfterViewInit() {
@@ -136,27 +106,29 @@ export class MygraphComponent implements OnInit, AfterViewInit {
 
 
     this.graph.select.subscribe( x=> {
+
+      console.log(x);
       
     }
 
 
     );
 
-    ldn.pipe(
-      map(() => { let items: NodeItem[] = []; return items;} ),
-      switchMap(items => this.graph.select.pipe(map((n: NodeItem ) => { 
-        if (items.length==2) { items = []; console.log("clear");}
-        if (!items.includes(n)){ items.push(n); console.log(n.label);      } 
-        return items; 
-      }))),
-      filter(items => items.length > 1)
-    ).subscribe( items => {
+    // ldn.pipe(
+    //   map(() => { let items: NodeItem[] = []; return items;} ),
+    //   switchMap(items => this.graph.select.pipe(map((n: NodeItem ) => { 
+    //     if (items.length==2) { items = []; console.log("clear");}
+    //     if (!items.includes(n)){ items.push(n); console.log(n.label);      } 
+    //     return items; 
+    //   }))),
+    //   filter(items => items.length > 1)
+    // ).subscribe( items => {
 
-      let id: string = this.newLinkId()
-      this.linkitems.push(new LinkItem(id,items[0].id, items[1].id,  id));
-      this.update$.next(null);
+    //   let id: string = this.newLinkId()
+    //   this.linkitems.push(new LinkItem(id,items[0].id, items[1].id,  id));
+    //   this.update$.next(null);
 
-    } );
+    // } );
 
     ldn.subscribe( x => console.log("dn")   );
     lup.subscribe( x => console.log("up")   );
@@ -184,32 +156,6 @@ export class MygraphComponent implements OnInit, AfterViewInit {
     console.log(event$);
   }
 
-  redraw() {
-    this.sort();
-    this.update$.next(null);
-
-    
-  }
-
-  addNode() {
-
-    let nid = this.newNodeId();
-    let n = new NodeItem(nid, nid);
-
-    if (this.current==null) {
-      this.nodeitems.push(n);
-    }
-    else {
-      let ix = this.nodeitems.findIndex(n => this.current.id == n.id);
-      if (ix !== -1) {
-        this.nodeitems.push(n);        
-        let lid = this.newLinkId();
-        this.linkitems.push(new LinkItem(lid,this.current.id, n.id, lid));
-      }
-    }
-    this.update$.next(null);
-  }
-
   updateNode(label: string) {
 
     let ix = this.nodeitems.findIndex(n => this.current.id == n.id);
@@ -221,26 +167,48 @@ export class MygraphComponent implements OnInit, AfterViewInit {
 
 
   sort() {
-
-    let s: NodeItem[] = this.nodeitems.slice();
-    s.sort((a: Node, b: Node) =>  (a.position.y == b.position.y) ? a.position.x - b.position.x : a.position.y - b.position.y);
-        
-/*
-    s.forEach((element: Node) => {
-
-      console.log( { n: element.label,  p: element.position });
-      
-    });
-*/
-    
-
-  
-
+    this.nodeservice.sortNodes().subscribe(nodes => this.nodeitems =nodes);
+    this.nodeservice.sortLinks().subscribe( links => this.linkitems = links);
   }
 
 
+  contextmenudata: ContextMenuData = null;
 
+  showContextMenu(item: Item, x: number, y: number){
+    let type: CtxType = (item instanceof NodeItem) ? CtxType.Node : CtxType.Link;
+    this.contextmenudata = new ContextMenuData(type, item.id, x, y);
+    this.contextmenudata.addLink = () => { this.showAddLinkNode(item as NodeItem) };
+    this.contextmenudata.delNode = () => { this.deleteNode(item as NodeItem) };
+    this.contextmenudata.delLink = () => { this.deleteLink(item as LinkItem) };
+  }
 
+  showAddLinkNode(sourceNode: NodeItem) {
+    let config: ModalOptions = { initialState: { sourceNode: sourceNode } };
+    this.modalRef = this.modalservice.show(ModalAddNodeComponent, config);
+    this.modalRef.content.onClose.subscribe(result => {
+      if (result)
+        this.reload();
+    });
+  }
 
+  deleteNode(node: NodeItem) {    
+    this.nodeservice.deleteNode(node.id);
+    this.reload();
+  }
+
+  deleteLink(link: LinkItem) {    
+    this.nodeservice.deleteLink(link.id);
+    this.reload();
+  }
+
+  reload() {
+    this.nodeservice.getNodes().subscribe(nodes => this.nodeitems = nodes);
+    this.nodeservice.getLinks().subscribe(links => this.linkitems = links);
+    this.update$.next(null);
+  }
+
+  hideContextMenu(){
+    this.contextmenudata = null;
+  }
 
 }

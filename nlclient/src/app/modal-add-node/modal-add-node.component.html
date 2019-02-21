@@ -1,0 +1,27 @@
+<div class="alert-box">
+  <div class="modal-header">
+      <h4 class="modal-title">Add Link</h4>
+      <button type="button" class="close" aria-label="Close" (click)="bsModalRef.hide()">
+          <span aria-hidden="true">&times;</span>
+      </button>
+  </div>
+  <div class="modal-body">
+    <div class="form-group">
+        <label for="select1">Add a Link from {{sourceNode.label}} to</label>
+        <select #selectedNode class="form-control" id="select1" (change)="onNodeIdChanged($event.target.value)">
+          <option value='new'>New Node</option>
+          <option [value]="node.id" *ngFor="let node of getOptionNodes() | async">
+              {{node.label}}
+          </option>
+        </select>
+    </div>
+    <div *ngIf="selectedNode.value=='new'" class="form-group">
+        <label for="input1">Name</label>
+        <input #newNodeName type="text" class="form-control" id="input1" (keyup)="onNodeNameChanged(newNodeName.value)">
+    </div>
+  </div>
+  <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="onConfirm()" [disabled]="!dataValid">Ok</button>
+      <button type="button" class="btn btn-secondary" (click)="onCancel()">Cancel</button>        
+  </div>
+</div>

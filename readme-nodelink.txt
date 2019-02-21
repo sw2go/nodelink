@@ -59,3 +59,11 @@ Hack! commented out the @HostListener('document:touchmove', ['$event']) in graph
 General Tips:
 Check Source-Code of graph.component.ts and other classes in the projects folder.
 
+Debugging:
+----------
+- Important, always open VSCode at the project-folder location, otherwise Debugging won't work
+- the folder .vscode (containing the launch.json file) must be on same level as the package.json
+- then ng serve and VSCode "Debug"
+- set port in launch.json to same as the one used by "ng serve"
+
+
