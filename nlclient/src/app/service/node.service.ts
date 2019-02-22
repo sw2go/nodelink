@@ -32,7 +32,6 @@ export class NodeService {
     this.links.push(l1);
     this.links.push(l2);
     this.links.push(l3);
-
   }
 
   private newNodeId(): string {
@@ -93,34 +92,30 @@ export class NodeService {
     }
   }
 
-
-
-
-
-
-
   sortNodes(): Observable<NodeItem[]> {
-
     let sn: SortNode[] = this.nodes.map(n => new SortNode(n,this.level(n.id)));
-
     sn.sort((a, b) => (a.level == b.level) ? a.nodeItem.position.x - b.nodeItem.position.x : a.level - b.level);
+    
+    let sortedNodes: NodeItem[] = sn.map(sn => sn.nodeItem as NodeItem);
+    
+    this.nodes = sortedNodes;
+    this.nodes.forEach(n => console.log(n.label));
 
-    return of(sn.map(sn => sn.nodeItem as NodeItem));
+    return this.getNodes();
   }
 
   level(nodeId: string): number {
     let l=0;
     let link: LinkItem = this.links.find(l => l.target == nodeId);
-    if (link) 
-      return 1 + this.level(link.source);
-    else 
-      return l;
+    if (link) {
+      let source: Node = this.nodes.find(n => n.id == link.source);
+      let target: Node = this.nodes.find(n => n.id == link.target);
+      if (source.position.y < target.position.y) {
+        return 1 + this.level(link.source);
+      }      
+    }           
+    return l;
   }
-
-
-
-
-
 
   sortLinks(): Observable<LinkItem[]> {
     let sl: SortLink[] = this.links.map(l => {
@@ -128,7 +123,6 @@ export class NodeService {
       let target: Node = this.nodes.find((n: Node) => n.id == l.target);
       return new SortLink(l, source.id, source.position.x, source.position.y,target.id, target.position.x, target.position.y);
     });
-
 
     sl.sort((a: SortLink, b: SortLink) => { 
       if (a.sy == b.sy) {
@@ -140,55 +134,26 @@ export class NodeService {
       else
         return a.sy - b.sy;
     });
-    
-    
-    
-    
+        
     let sortedLinks: LinkItem[] = sl.map(sl => sl.linkItem);
-
     this.links = sortedLinks;
-
-    
     this.links.forEach(l => console.log(l.label));
-
-
-    return of(sortedLinks);
-
+    return this.getLinks();
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   getNodes(): Observable<NodeItem[]> {
     return of(this.nodes);
   }
 
-  getLinkableNodes(sourceNode: NodeItem): Observable<NodeItem[]> {
-    return of(this.nodes).pipe(
-      map(nodes => nodes.filter(n => n.id != sourceNode.id)
-    ));
-  }
-
-
-
-
-
-
-
   getLinks(): Observable<LinkItem[]> {
     return of(this.links);
   }
 
+  getLinkableNodes(sourceNode: NodeItem): Observable<NodeItem[]> {
+    return of(this.nodes).pipe(
+      map(nodes => nodes.filter(n => n.id != sourceNode.id && (this.links.findIndex(l => l.source == sourceNode.id && l.target == n.id) < 0))
+    ));
+  }
 }
 
 

@@ -11,19 +11,19 @@ import { NodeService } from '../service/node.service';
 })
 export class ModalAddNodeComponent implements OnInit {
 
-  sourceNode: NodeItem;
-
+  sourceNode: NodeItem;   // is set by initialState in ModalOptions see: MygraphComponent.showAddLinkNode() 
   public onClose: Subject<boolean>;
-
-  private targetNodeName: string = undefined;
-  private targetNodeId: string = 'new';
-  private dataValid: boolean = false;
+  private targetNodeName: string;
+  private targetNodeId: string;
+  private dataValid: boolean;
 
   constructor(private bsModalRef: BsModalRef, private nodeService: NodeService) { 
   }
 
   ngOnInit() {
     this.onClose = new Subject();
+    this.targetNodeName = '';
+    this.targetNodeId = 'new';
     this.dataValid = false;
   }
 
@@ -46,9 +46,8 @@ export class ModalAddNodeComponent implements OnInit {
       this.nodeService.addLinkAndNode(this.sourceNode.id, this.targetNodeName);
     else
       this.nodeService.addLink(this.sourceNode.id, this.targetNodeId);
-      
     this.onClose.next(true);
-    this.bsModalRef.hide();
+    this.bsModalRef.hide();  
   }
 
   onCancel(): void {

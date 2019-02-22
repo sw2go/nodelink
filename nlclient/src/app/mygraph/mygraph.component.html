@@ -1,4 +1,4 @@
-<div class="container-fluid border border-primary" (click)="hideContextMenu()" oncontextmenu="return false;">
+<div class="container-fluid " (click)="hideContextMenu()" oncontextmenu="return false;">
   <div *ngIf="contextmenudata!=null">
     <app-context-menu [context]="contextmenudata" ></app-context-menu>
   </div>
@@ -6,8 +6,8 @@
 
   <div class="row">
 
-    <div class="col-8 border border-secondary">
-      <div  style="height: calc( 100vh - 70px)">
+    <div class="col-10 card">
+      <div  style="height: calc( 100vh - 68px)">
         <ngx-graph class="chart-container"
           [layout]="layout"
           [links]="linkitems"
@@ -40,7 +40,7 @@
                 [attr.height]="node.dimension.height"
                 [attr.fill]="node.data.color"
                 [attr.stroke]="'black'"
-                [attr.stroke-width]="'0'"  
+                [attr.stroke-width]="(current?.id == node.id) ? '3' : '0'"  
               />
               <svg:text alignment-baseline="central" [attr.x]="10" [attr.y]="node.dimension.height / 2">
                 {{node.label}}
@@ -66,16 +66,27 @@
       </div>    
     </div>
 
-    <div class="col-4">
-      <div>
-          <button type="button" class="btn btn-secondary" (click)="sort()">Relayout</button>
+    <div class="col-2">
+      <div class="card">
+        <div class="card-body">
+            <button type="button" class="btn btn-primary float-right" (click)="sort()">Relayout</button>
+        </div>          
       </div>
 
-      <div *ngIf="current">
-          <input #nodeLabel [value]="current.label"> 
-          <button (click)="updateNode(nodeLabel.value)">Update</button>         
+      <div *ngIf="current" class="card mt-2" >
+        <div class="card-body">
+          <h5 class="card-title">Node Context</h5>  
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text" id="basic-addon1">Name</span>
+            </div>
+            <input #nodeLabel class="form-control" [value]="current.label">                    
+          </div>
+          <button class="btn btn-primary float-right mt-3" (click)="updateNode(nodeLabel.value)">Update</button> 
+        </div>
+        
+        
       </div>
-                
     </div>   
 
   </div>           <!-- row -->

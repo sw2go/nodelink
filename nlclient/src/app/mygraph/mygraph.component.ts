@@ -87,13 +87,11 @@ export class MygraphComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    console.log(this.graph);
-
     this.graph.select.subscribe((n: NodeItem) => {
       this.current = n;
     });
 
-    //press.subscribe( x => console.log(x));
+
 
 
 
@@ -105,14 +103,9 @@ export class MygraphComponent implements OnInit, AfterViewInit {
 
 
 
-    this.graph.select.subscribe( x=> {
-
-      console.log(x);
-      
-    }
 
 
-    );
+    
 
     // ldn.pipe(
     //   map(() => { let items: NodeItem[] = []; return items;} ),
@@ -145,22 +138,10 @@ export class MygraphComponent implements OnInit, AfterViewInit {
   }
 
 
-
-  onClick(event$) {
-    //alert(event$);
-
-    if (event$.shiftKey)
-      console.log("shift");
-
-
-    console.log(event$);
-  }
-
   updateNode(label: string) {
-
     let ix = this.nodeitems.findIndex(n => this.current.id == n.id);
     if (ix !== -1) {
-      this.nodeitems[ix].label = label; //  = new NodeItem(this.current.id, this.current.label  + "33");
+      this.nodeitems[ix].label = label;
       this.update$.next(null);
     }      
   }
@@ -193,6 +174,7 @@ export class MygraphComponent implements OnInit, AfterViewInit {
 
   deleteNode(node: NodeItem) {    
     this.nodeservice.deleteNode(node.id);
+    this.current = null;
     this.reload();
   }
 

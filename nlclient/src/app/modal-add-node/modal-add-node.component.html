@@ -15,7 +15,7 @@
           </option>
         </select>
     </div>
-    <div *ngIf="selectedNode.value=='new'" class="form-group">
+    <div *ngIf="targetNodeId=='new'" class="form-group">
         <label for="input1">Name</label>
         <input #newNodeName type="text" class="form-control" id="input1" (keyup)="onNodeNameChanged(newNodeName.value)">
     </div>
