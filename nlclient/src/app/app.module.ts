@@ -12,6 +12,10 @@ import { ModalModule } from 'ngx-bootstrap/modal';
 import { NodeService } from './service/node.service';
 import { ModalAddNodeComponent } from './modal-add-node/modal-add-node.component';
 import { ContextMenuComponent } from './context-menu/context-menu.component';
+import { Store } from './state/store';
+import { reducer, initState } from './state/reducer';
+import { StoreAndRouterConnector } from './state/storeandrouterconnector';
+import { MynodeComponent } from './mynode/mynode.component';
 
 
 
@@ -20,7 +24,8 @@ import { ContextMenuComponent } from './context-menu/context-menu.component';
     AppComponent,
     MygraphComponent,
     ModalAddNodeComponent,
-    ContextMenuComponent
+    ContextMenuComponent,
+    MynodeComponent
   ],
   entryComponents: [
     ModalAddNodeComponent
@@ -34,7 +39,11 @@ import { ContextMenuComponent } from './context-menu/context-menu.component';
     SortableModule.forRoot(),
     ModalModule.forRoot()
   ],
-  providers: [NodeService],
+  providers: [
+    NodeService,
+    { provide: Store, useFactory: (nservice) => new Store(reducer(nservice), initState), deps: [NodeService] },
+    StoreAndRouterConnector
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

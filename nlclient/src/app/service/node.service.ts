@@ -4,8 +4,6 @@ import { Observable, of } from 'rxjs';
 import { LinkItem } from '../model/linkitem';
 import { map } from 'rxjs/operators';
 
-import { Node, Edge } from '@swimlane/ngx-graph/lib/models';
-
 @Injectable()
 export class NodeService {
 
@@ -44,10 +42,11 @@ export class NodeService {
     return "L" + this.id.toString();
   }
 
-  addLinkAndNode(sourceNodeId: string, targetNodeName: string): boolean {
+  // liefert neuen Link und Node
+  addLinkAndNode(sourceNodeId: string, targetNodeName: string): Observable<{link: LinkItem, node: NodeItem}> {
     let six = this.nodes.findIndex(n => n.id == sourceNodeId);    
     if (six < 0)
-      return false;
+      throw new RangeError("sourceId " + sourceNodeId + " not found");
     
     let targetNode = new NodeItem(this.newNodeId(), targetNodeName);
     this.nodes.splice(six+1, 0, targetNode);
@@ -55,98 +54,79 @@ export class NodeService {
     let lid = this.newLinkId();
     let newLink = new LinkItem(lid,sourceNodeId, targetNode.id, lid);
     this.links.push(newLink);
-    return true;
+    return of({link: newLink, node: targetNode});
   }
 
-  addLink(sourceNodeId: string, targetNodeId: string): void {
+  // liefert neuen Link
+  addLink(sourceNodeId: string, targetNodeId: string): Observable<LinkItem> {
     let six = this.nodes.findIndex(n => n.id == sourceNodeId);
     let tix = this.nodes.findIndex(n => n.id == targetNodeId);
-    if (six>=0 && tix>=0) {
-      let lid = this.newLinkId();
-      let newLink = new LinkItem(lid,sourceNodeId, targetNodeId, lid);
-      this.links.push(newLink);
-    }
+    if (six<0)
+      throw new RangeError("sourceId " + sourceNodeId + " not found");
+    if (tix<0)
+      throw new RangeError("sourceId " + targetNodeId + " not found");    
+    
+    let lid = this.newLinkId();
+    let newLink = new LinkItem(lid, sourceNodeId, targetNodeId, lid);
+    this.links.push(newLink);
+    return of(newLink);
+  }
+
+  updateNode(nodeId: string, name: string): Observable<NodeItem> {
+    let n = this.nodes.find(n => n.id == nodeId);
+    if (!n)
+      throw new RangeError("nodeId " + nodeId + " not found");
+    let upd = {...n, label: name};
+    this.nodes[nodeId] = upd;
+    return of (upd);
   }
   
-  deleteLink(linkId: string) {
+  deleteLink(linkId: string): Observable<boolean> {
     let lix = this.links.findIndex(l => l.id == linkId);
     if (lix < 0)
-      return false;
-
-    this.links.splice(lix, 1);  
+      throw new RangeError("linkId " + linkId + " not found");
+    this.links.splice(lix, 1); 
+    return of(true); 
   }
 
-  deleteNode(nodeId: string) {
-    let nix = this.nodes.findIndex(l => l.id == nodeId);
+  // liefert id's der gelöschten Links
+  deleteNode(nodeId: string): Observable<string[]> {
+    let nix = this.nodes.findIndex(n => n.id == nodeId);
     if (nix < 0)
-      return false;
+      throw new RangeError("nodeId " + nodeId + " not found");
     else
       this.nodes.splice(nix, 1);
 
+    let deletedLinkIds: string[] = [];
     while(true) {
       let lix = this.links.findIndex(l => l.source == nodeId || l.target == nodeId);
       if (lix < 0)
         break;      
-      else
-        this.links.splice(lix, 1);
+      
+      deletedLinkIds.push(this.links[lix].id);
+      this.links.splice(lix, 1);
     }
+    return of(deletedLinkIds);
   }
 
-  sortNodes(): Observable<NodeItem[]> {
-    let sn: SortNode[] = this.nodes.map(n => new SortNode(n,this.level(n.id)));
-    sn.sort((a, b) => (a.level == b.level) ? a.nodeItem.position.x - b.nodeItem.position.x : a.level - b.level);
-    
-    let sortedNodes: NodeItem[] = sn.map(sn => sn.nodeItem as NodeItem);
-    
-    this.nodes = sortedNodes;
-    this.nodes.forEach(n => console.log(n.label));
-
-    return this.getNodes();
+  // liefert nodes Objekt mit node Objekten und nlist Array mit Node-Id's
+  getNodes(): Observable<{nodes: {[id: string]: NodeItem}, nlist: string[]}>{
+    const nodes = this.nodes.reduce((acc, t) => (acc[t.id] = t, acc), {});
+    const nlist =  this.nodes.map(t => t.id);
+    return of ({nodes, nlist});
   }
 
-  level(nodeId: string): number {
-    let l=0;
-    let link: LinkItem = this.links.find(l => l.target == nodeId);
-    if (link) {
-      let source: Node = this.nodes.find(n => n.id == link.source);
-      let target: Node = this.nodes.find(n => n.id == link.target);
-      if (source.position.y < target.position.y) {
-        return 1 + this.level(link.source);
-      }      
-    }           
-    return l;
+  // liefert links Objekt mit link Objekten und llist Array mit Link-Id's
+  getLinks(): Observable<{links: {[id: string]: LinkItem}, llist: string[]}>{
+    const links = this.links.reduce((acc, t) => (acc[t.id] = t, acc), {});
+    const llist =  this.links.map(t => t.id);
+    return of ({links, llist});
   }
 
-  sortLinks(): Observable<LinkItem[]> {
-    let sl: SortLink[] = this.links.map(l => {
-      let source: Node = this.nodes.find((n: Node) => n.id == l.source);
-      let target: Node = this.nodes.find((n: Node) => n.id == l.target);
-      return new SortLink(l, source.id, source.position.x, source.position.y,target.id, target.position.x, target.position.y);
-    });
-
-    sl.sort((a: SortLink, b: SortLink) => { 
-      if (a.sy == b.sy) {
-        if (a.sx == b.sx)
-          return b.angle() - a.angle();
-        else 
-          return a.sx - b.sx;
-      }
-      else
-        return a.sy - b.sy;
-    });
-        
-    let sortedLinks: LinkItem[] = sl.map(sl => sl.linkItem);
-    this.links = sortedLinks;
-    this.links.forEach(l => console.log(l.label));
-    return this.getLinks();
-  }
-
-  getNodes(): Observable<NodeItem[]> {
-    return of(this.nodes);
-  }
-
-  getLinks(): Observable<LinkItem[]> {
-    return of(this.links);
+  updateSortOrder(nodeIds: string[], linkIds: string[]): Observable<boolean> {
+    this.nodes = nodeIds.map(id => this.nodes.find((n) => n.id == id ));
+    this.links = linkIds.map(id => this.links.find((l) => l.id == id ));
+    return of(true);
   }
 
   getLinkableNodes(sourceNode: NodeItem): Observable<NodeItem[]> {
@@ -157,27 +137,4 @@ export class NodeService {
 }
 
 
-export class SortNode {
-  public constructor(
-    public nodeItem: Node,
-    public level: number
-  ){}
-}
 
-
-export class SortLink {
-  public constructor(
-  public linkItem: LinkItem,
-
-  public sid: string,
-  public sx: number,
-  public sy: number,
-
-  public tid: string,
-  public tx: number,
-  public ty: number){}
-
-  public angle() {
-    return Math.atan2(this.ty - this.sy, this.tx - this.sx);
-  }
-}

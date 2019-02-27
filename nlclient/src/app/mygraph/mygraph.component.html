@@ -40,7 +40,7 @@
                 [attr.height]="node.dimension.height"
                 [attr.fill]="node.data.color"
                 [attr.stroke]="'black'"
-                [attr.stroke-width]="(current?.id == node.id) ? '3' : '0'"  
+                [attr.stroke-width]="(currentNodeId == node.id) ? '3' : '0'"  
               />
               <svg:text alignment-baseline="central" [attr.x]="10" [attr.y]="node.dimension.height / 2">
                 {{node.label}}
@@ -69,23 +69,12 @@
     <div class="col-2">
       <div class="card">
         <div class="card-body">
-            <button type="button" class="btn btn-primary float-right" (click)="sort()">Relayout</button>
+            <button type="button" class="btn btn-primary float-right" (click)="relayout()">Relayout</button>
         </div>          
       </div>
 
-      <div *ngIf="current" class="card mt-2" >
-        <div class="card-body">
-          <h5 class="card-title">Node Context</h5>  
-          <div class="input-group">
-            <div class="input-group-prepend">
-              <span class="input-group-text" id="basic-addon1">Name</span>
-            </div>
-            <input #nodeLabel class="form-control" [value]="current.label">                    
-          </div>
-          <button class="btn btn-primary float-right mt-3" (click)="updateNode(nodeLabel.value)">Update</button> 
-        </div>
-        
-        
+      <div *ngIf="currentNodeId" class="card mt-2" >
+          <router-outlet></router-outlet>
       </div>
     </div>   
 

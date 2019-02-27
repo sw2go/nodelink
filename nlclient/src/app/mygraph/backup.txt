@@ -1,0 +1,29 @@
+const keyDowns = fromEvent(document, "keydown");
+const keyUps = fromEvent(document, "keydown");
+
+const keyPress = keyDowns.pipe(
+  merge(keyUps),
+  groupBy((e: any) => e.keyCode),
+  distinctUntilChanged((e: any) => e.type)
+);
+
+const fkey = fromEvent(document, "keydown").pipe(filter((d:any) => d.key == 'f'),
+  switchMap((d:any) => of(d).pipe(merge(fromEvent(document, 'keyup').pipe(filter((u:any) => u.key == d.key)))))
+)
+
+
+// observables to detect if l-Key is pressed
+const __ldn = fromEvent(document, 'keydown').pipe(filter((x: any) => x.key == "l"), distinctUntilChanged((x,y) => x.key==y.key));
+const lup = fromEvent(document, 'keyup').pipe(startWith({key: "l"}), filter((x: any) => x.key == "l"));
+const ldn = lup.pipe(switchMap((x) => __ldn ));
+
+const l = lup.pipe(merge(ldn));
+
+//const cl = fromEvent(document, 'keydown').pipe(distinctUntilChanged((x: any ,y: any) => x.key==y.key)
+
+
+const __adn = fromEvent(document, 'keydown').pipe(filter((x: any) => x.key == "a"), distinctUntilChanged((x,y) => x.key==y.key));
+const aup = fromEvent(document, 'keyup').pipe(startWith({key: "a"}), filter((x: any) => x.key == "a"));
+const adn = aup.pipe(switchMap((x) => __adn ));
+
+const resize = fromEvent(window, 'resize');

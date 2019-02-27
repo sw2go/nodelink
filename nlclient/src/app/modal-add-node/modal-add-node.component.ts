@@ -3,6 +3,8 @@ import { BsModalRef } from 'ngx-bootstrap/modal';
 import { Subject, Observable } from 'rxjs';
 import { NodeItem } from '../model/nodeitem';
 import { NodeService } from '../service/node.service';
+import { Store } from '../state/store';
+import { State, Action } from '../state/reducer';
 
 @Component({
   selector: 'app-modal-add-node',
@@ -17,7 +19,7 @@ export class ModalAddNodeComponent implements OnInit {
   private targetNodeId: string;
   private dataValid: boolean;
 
-  constructor(private bsModalRef: BsModalRef, private nodeService: NodeService) { 
+  constructor(private bsModalRef: BsModalRef, private store: Store<State,Action>, private nodeService: NodeService) { 
   }
 
   ngOnInit() {
@@ -42,12 +44,16 @@ export class ModalAddNodeComponent implements OnInit {
   }
 
   onConfirm(): void {
-    if (this.targetNodeId == 'new')
-      this.nodeService.addLinkAndNode(this.sourceNode.id, this.targetNodeName);
-    else
-      this.nodeService.addLink(this.sourceNode.id, this.targetNodeId);
-    this.onClose.next(true);
-    this.bsModalRef.hide();  
+    
+    let obs = (this.targetNodeId == 'new') 
+      ? this.store.sendAction({type: "ADDLINKANDNODE", sourceNodeId: this.sourceNode.id, targetNodeName: this.targetNodeName})
+      : this.store.sendAction({type: "ADDLINK", sourceNodeId: this.sourceNode.id, targetNodeId: this.targetNodeId});
+
+    obs.subscribe(x => {
+      this.onClose.next(true);
+      this.bsModalRef.hide();  
+    });
+
   }
 
   onCancel(): void {

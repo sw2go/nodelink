@@ -1,53 +1,23 @@
 import { Component, OnInit, AfterViewInit, ViewChild } from '@angular/core';
 import { NodeItem } from './../model/nodeitem';
 import { LinkItem } from './../model/linkitem';
-import { Node } from '@swimlane/ngx-graph/lib/models';
-
 import { LayoutService } from '@swimlane/ngx-graph/lib/graph/layouts/layout.service';
 import { GraphComponent  } from '@swimlane/ngx-graph/lib/graph/graph.component'
 import { Layout } from '@swimlane/ngx-graph/lib/models';
 import { DagreSettings, Orientation } from '@swimlane/ngx-graph/lib/graph/layouts/dagre';
 
-import { BehaviorSubject, fromEvent, of } from 'rxjs';
-import { map,  filter, distinctUntilChanged, switchMap, tap, startWith, delay, merge, groupBy, mergeAll, concat, concatMap, mergeMap, exhaustMap, debounce } from 'rxjs/operators';
-import { group } from '@angular/animations';
+import { BehaviorSubject} from 'rxjs';
+
 import { NodeService } from '../service/node.service';
 
 import { BsModalRef, BsModalService, ModalOptions } from 'ngx-bootstrap/modal';
 import { ModalAddNodeComponent } from '../modal-add-node/modal-add-node.component';
 import { CtxType, ContextMenuData } from '../model/contextmenudata';
 import { Item } from '../model/item';
-
-const keyDowns = fromEvent(document, "keydown");
-const keyUps = fromEvent(document, "keydown");
-
-const keyPress = keyDowns.pipe(
-  merge(keyUps),
-  groupBy((e: any) => e.keyCode),
-  distinctUntilChanged((e: any) => e.type)
-);
-
-const fkey = fromEvent(document, "keydown").pipe(filter((d:any) => d.key == 'f'),
-  switchMap((d:any) => of(d).pipe(merge(fromEvent(document, 'keyup').pipe(filter((u:any) => u.key == d.key)))))
-)
-
-
-
-// observables to detect if l-Key is pressed
-const __ldn = fromEvent(document, 'keydown').pipe(filter((x: any) => x.key == "l"), distinctUntilChanged((x,y) => x.key==y.key));
-const lup = fromEvent(document, 'keyup').pipe(startWith({key: "l"}), filter((x: any) => x.key == "l"));
-const ldn = lup.pipe(switchMap((x) => __ldn ));
-
-const l = lup.pipe(merge(ldn));
-
-//const cl = fromEvent(document, 'keydown').pipe(distinctUntilChanged((x: any ,y: any) => x.key==y.key)
-
-
-const __adn = fromEvent(document, 'keydown').pipe(filter((x: any) => x.key == "a"), distinctUntilChanged((x,y) => x.key==y.key));
-const aup = fromEvent(document, 'keyup').pipe(startWith({key: "a"}), filter((x: any) => x.key == "a"));
-const adn = aup.pipe(switchMap((x) => __adn ));
-
-const resize = fromEvent(window, 'resize');
+import { Store } from '../state/store';
+import { Action, State } from '../state/reducer';
+import { Router, ActivatedRoute } from '@angular/router';
+import { sortGraphItems } from './graphsortpolicy';
 
 
 @Component({
@@ -59,8 +29,7 @@ export class MygraphComponent implements OnInit, AfterViewInit {
 
   modalRef: BsModalRef;
 
-
-  current: NodeItem;
+  currentNodeId: string;
 
   @ViewChild(GraphComponent) 
   graph: GraphComponent;
@@ -74,7 +43,7 @@ export class MygraphComponent implements OnInit, AfterViewInit {
 
   update$: BehaviorSubject<any>;
 
-  constructor(private layoutservice: LayoutService, private nodeservice: NodeService, private modalservice: BsModalService) { 
+  constructor(private activatedRoute: ActivatedRoute, private router: Router, private layoutservice: LayoutService, private nodeservice: NodeService, private modalservice: BsModalService, private store: Store<State, Action>) { 
     this.layout = layoutservice.getLayout("dagre"); // "dagreCluster" , "dagreNodesOnly", "d3ForceDirected",  "colaForceDirected"  
     let dagreLayoutSettings: DagreSettings = this.layout.settings;
     dagreLayoutSettings.orientation = Orientation.TOP_TO_BOTTOM;
@@ -82,76 +51,35 @@ export class MygraphComponent implements OnInit, AfterViewInit {
 
   ngOnInit() {
 
+    this.activatedRoute.queryParams.subscribe(qp => {
+      this.currentNodeId = (this.store.state.nlist.some(n => n == qp.selected )) ? qp.selected : null;
+    });
+
+
     this.update$ = new BehaviorSubject<any>(null);
-    this.reload();  
+    this.redraw();  
   }
 
   ngAfterViewInit() {
     this.graph.select.subscribe((n: NodeItem) => {
-      this.current = n;
+      this.router.navigate(['/nodes/ctx1'], { queryParams: { selected: n.id } });
     });
 
 
-
-
-
-
-
-    fkey.subscribe( x => console.log(x));
-
-    
-
-
-
-
-
-    
-
-    // ldn.pipe(
-    //   map(() => { let items: NodeItem[] = []; return items;} ),
-    //   switchMap(items => this.graph.select.pipe(map((n: NodeItem ) => { 
-    //     if (items.length==2) { items = []; console.log("clear");}
-    //     if (!items.includes(n)){ items.push(n); console.log(n.label);      } 
-    //     return items; 
-    //   }))),
-    //   filter(items => items.length > 1)
-    // ).subscribe( items => {
-
-    //   let id: string = this.newLinkId()
-    //   this.linkitems.push(new LinkItem(id,items[0].id, items[1].id,  id));
-    //   this.update$.next(null);
-
-    // } );
-
-    ldn.subscribe( x => console.log("dn")   );
-    lup.subscribe( x => console.log("up")   );
-
-
-
-  /*  nicht nötig wenn man nichts im resize machen will
-    resize.subscribe((x: any) => {
-      this.update$.next(null); // kann muss aber nicht
-    });
-
-    of('dummy').pipe(delay(2)).subscribe(x => window.dispatchEvent(new Event('resize')));
-  */
   }
 
-
-  updateNode(label: string) {
-    let ix = this.nodeitems.findIndex(n => this.current.id == n.id);
-    if (ix !== -1) {
-      this.nodeitems[ix].label = label;
-      this.update$.next(null);
-    }      
+  relayout() {
+    let sorted = sortGraphItems(this.graph.nodes,this.graph.links);
+    this.store.sendAction({type: "UPDATESORTORDER", nodeIds: sorted.nodeIds, linkIds: sorted.linkIds }).subscribe((x) => {
+      this.redraw();
+    })
   }
 
-
-  sort() {
-    this.nodeservice.sortNodes().subscribe(nodes => this.nodeitems =nodes);
-    this.nodeservice.sortLinks().subscribe( links => this.linkitems = links);
+  redraw() {
+    this.nodeitems = this.store.state.nlist.map(n => this.store.state.nodes[n]);
+    this.linkitems = this.store.state.llist.map(l => this.store.state.links[l])
+    this.update$.next(null);
   }
-
 
   contextmenudata: ContextMenuData = null;
 
@@ -168,25 +96,21 @@ export class MygraphComponent implements OnInit, AfterViewInit {
     this.modalRef = this.modalservice.show(ModalAddNodeComponent, config);
     this.modalRef.content.onClose.subscribe(result => {
       if (result)
-        this.reload();
+        this.redraw();
     });
   }
 
   deleteNode(node: NodeItem) {    
-    this.nodeservice.deleteNode(node.id);
-    this.current = null;
-    this.reload();
+    this.store.sendAction({type: "DELETENODE", nodeId: node.id}).subscribe(x=>{
+      this.router.navigate([], {queryParams: { selected: null }, queryParamsHandling: 'merge'});
+      this.redraw();
+    });
   }
 
-  deleteLink(link: LinkItem) {    
-    this.nodeservice.deleteLink(link.id);
-    this.reload();
-  }
-
-  reload() {
-    this.nodeservice.getNodes().subscribe(nodes => this.nodeitems = nodes);
-    this.nodeservice.getLinks().subscribe(links => this.linkitems = links);
-    this.update$.next(null);
+  deleteLink(link: LinkItem) {  
+    this.store.sendAction({ type: "DELETELINK" , linkId: link.id }).subscribe(x =>{
+      this.redraw();
+    });
   }
 
   hideContextMenu(){
