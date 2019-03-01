@@ -1,10 +1,12 @@
-<div class="card-body">
-  <h5 class="card-title">Node Context</h5>  
-  <div class="input-group">
-    <div class="input-group-prepend">
-      <span class="input-group-text" id="basic-addon1">Name</span>
+<div *ngIf="current" class="card mt-2">
+  <div class="card-body">
+    <h5 class="card-title">Node Context</h5>  
+    <div class="input-group">
+      <div class="input-group-prepend">
+        <span class="input-group-text" id="basic-addon1">Name</span>
+      </div>
+      <input #nodeLabel class="form-control" [value]="current.label">                    
     </div>
-    <input #nodeLabel class="form-control" [value]="current.label">                    
+    <button class="btn btn-primary float-right mt-3" (click)="updateNode(nodeLabel.value)">Update</button> 
   </div>
-  <button class="btn btn-primary float-right mt-3" (click)="updateNode(nodeLabel.value)">Update</button> 
 </div>

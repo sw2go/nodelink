@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { NodeItem } from './../model/nodeitem';
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { LinkItem } from '../model/linkitem';
-import { map } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 
 @Injectable()
 export class NodeService {
@@ -78,6 +78,8 @@ export class NodeService {
       throw new RangeError("nodeId " + nodeId + " not found");
     let upd = {...n, label: name};
     this.nodes[nodeId] = upd;
+    if (name == "e")
+      throw new Error('update fialed with E!');
     return of (upd);
   }
   

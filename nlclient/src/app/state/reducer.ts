@@ -1,5 +1,5 @@
 import { Reducer, Store } from './store';
-import { Observable, pipe } from 'rxjs';
+import { Observable, pipe, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { NodeService } from '../service/node.service';
 import { RouterStateSnapshot } from '@angular/router';
@@ -43,7 +43,7 @@ export function isAction<T extends Action>(action: Action): action is T {
 
 
 export function reducer(backend: NodeService): Reducer<State, Action> {
-    return (store: Store<State, Action>, state: State, action: Action): State|Observable<State> => {
+    return (store: Store<State, Action>, state: State, action: Action): Observable<State> => {
       if (action.type == 'ROUTER_NAVIGATION') {
         const route = action.state.root.firstChild.firstChild; 
         const qp = action.state.root.queryParams;
@@ -61,14 +61,13 @@ export function reducer(backend: NodeService): Reducer<State, Action> {
           // );
         }
         else if (route.routeConfig.path === "nodes/ctx1") {
-          return state;
-          ;
+          return of(state);
         }
       }
       else if (action.type == 'UPDATESORTORDER') {
         return backend.updateSortOrder(action.nodeIds, action.linkIds).pipe(
           map(b => ({...state, nlist: action.nodeIds, llist: action.linkIds }) )
-        )
+        );
       }
       else if(action.type == "UPDATENODE") {
         return backend.updateNode(action.nodeId, action.name).pipe(
@@ -88,7 +87,7 @@ export function reducer(backend: NodeService): Reducer<State, Action> {
         }
         return backend.deleteLink(action.linkId).pipe(
           map((b) => ({...state, llist: upd1, links: upd2 }))
-        )
+        );
       }
       else if (action.type == "DELETENODE") {
         return backend.deleteNode(action.nodeId).pipe(
@@ -108,7 +107,7 @@ export function reducer(backend: NodeService): Reducer<State, Action> {
             }
             return (newstate);
           })
-        )
+        );
       }
       else if (action.type == "ADDLINK") {
         return backend.addLink(action.sourceNodeId, action.targetNodeId).pipe(
@@ -136,53 +135,8 @@ export function reducer(backend: NodeService): Reducer<State, Action> {
           })
         );
       }
-
-
-
-
-
-
-
-
-      switch (action.type) {
-        case 'ROUTER_NAVIGATION':       
-          const route = action.state.root.firstChild.firstChild;        
-          console.log("reducer: ROUTER_NAVIGATION(" + route.routeConfig.path + ")");
-          
-          if (route.routeConfig.path === "nodes") {
-            //const filters =  createFilters(route.params);
-            return backend.getNodes().pipe(map(r => ({...state, ...r})));
-          } else if (route.routeConfig.path  === "node/:id") {
-            const id = + route.params['id'];
-            if (state.nodes[id]) 
-                return state;
-            //return backend.findTalk(id).pipe(map(t => ({...state, talks: {...state.talks, [t.id]: t}})));
-          } else {
-            return state;
-          }
-    
-        // case 'ADDLINK':
-        //   console.log("reducer: ADDLINK");
-        //   asss: AddLinkAction = action;
-        //   backend.addLink(action, action.rating).subscribe(
-        //     n => {}, 
-        //     (e) => store.sendAction({type: 'UNRATE', talkId: action.talkId, error: e}) 
-        //   );        
-        //   const talkToRate = state.talks[action.talkId];
-        //   const ratedTalk = {...talkToRate, yourRating: action.rating};
-        //   const updatedTalks = {...state.talks, [action.talkId]: ratedTalk};
-        //   return {...state, talks: updatedTalks};
-  
-        // case 'UNRATE':
-        //   console.log("reducer: UNRATE");
-        //   const talkToUnrate = state.talks[action.talkId];
-        //   const unratedTalk = {...talkToUnrate, yourRating: null};
-        //   const updatedTalksAfterUnrating = {...state.talks, [action.talkId]: unratedTalk };
-        //   return {...state, talks: updatedTalksAfterUnrating};
-  
-        default:
-          console.log("reducer: DEFAULT");
-          return state;
+      else {
+        return of(state);
       }
     }
   }

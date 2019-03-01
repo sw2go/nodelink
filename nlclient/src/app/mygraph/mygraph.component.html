@@ -10,9 +10,8 @@
       <div  style="height: calc( 100vh - 68px)">
         <ngx-graph class="chart-container"
           [layout]="layout"
-          [links]="linkitems"
           [nodes]="nodeitems"
-          [update$]="update$"              
+          [links]="linkitems"                    
           [draggingEnabled]="true"
           [autoCenter]="false"
           (activate)="onClick($event)"            
@@ -40,7 +39,7 @@
                 [attr.height]="node.dimension.height"
                 [attr.fill]="node.data.color"
                 [attr.stroke]="'black'"
-                [attr.stroke-width]="(currentNodeId == node.id) ? '3' : '0'"  
+                [attr.stroke-width]="(selectedNodeId == node.id) ? '3' : '0'"  
               />
               <svg:text alignment-baseline="central" [attr.x]="10" [attr.y]="node.dimension.height / 2">
                 {{node.label}}
@@ -69,13 +68,10 @@
     <div class="col-2">
       <div class="card">
         <div class="card-body">
-            <button type="button" class="btn btn-primary float-right" (click)="relayout()">Relayout</button>
+            <button type="button" class="btn btn-primary float-right" (click)="relayoutClicked()">Relayout</button>
         </div>          
       </div>
-
-      <div *ngIf="currentNodeId" class="card mt-2" >
-          <router-outlet></router-outlet>
-      </div>
+      <router-outlet></router-outlet>
     </div>   
 
   </div>           <!-- row -->

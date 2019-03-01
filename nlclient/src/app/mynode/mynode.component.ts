@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '../state/store';
 import { Action, State } from '../state/reducer';
 import { NodeItem } from '../model/nodeitem';
+import { from } from 'rxjs';
 
 @Component({
   selector: 'app-mynode',
@@ -24,8 +25,7 @@ export class MynodeComponent implements OnInit {
   updateNode(name: string) {
     this.store.sendAction({type: "UPDATENODE", nodeId: this.current.id, name: name}).subscribe(x=>{
       this.router.navigate([], {queryParamsHandling: 'merge'} );
-    });
-
+    }, e => console.log( "eeee " + e));
   }
 
 }

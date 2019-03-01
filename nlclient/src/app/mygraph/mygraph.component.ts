@@ -29,19 +29,14 @@ export class MygraphComponent implements OnInit, AfterViewInit {
 
   modalRef: BsModalRef;
 
-  currentNodeId: string;
+  selectedNodeId: string;
 
   @ViewChild(GraphComponent) 
   graph: GraphComponent;
 
-
-  lid: number = 0;
   layout: Layout;
   nodeitems: NodeItem[] = [];
   linkitems: LinkItem[] = [];
-
-
-  update$: BehaviorSubject<any>;
 
   constructor(private activatedRoute: ActivatedRoute, private router: Router, private layoutservice: LayoutService, private nodeservice: NodeService, private modalservice: BsModalService, private store: Store<State, Action>) { 
     this.layout = layoutservice.getLayout("dagre"); // "dagreCluster" , "dagreNodesOnly", "d3ForceDirected",  "colaForceDirected"  
@@ -50,37 +45,36 @@ export class MygraphComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit() {
-
+    // subscribe to query-parameter "selected", used to update the display of nodes in graph
     this.activatedRoute.queryParams.subscribe(qp => {
-      this.currentNodeId = (this.store.state.nlist.some(n => n == qp.selected )) ? qp.selected : null;
+      this.selectedNodeId = (this.store.state.nlist.some(n => n == qp.selected )) ? qp.selected : null;
     });
-
-
-    this.update$ = new BehaviorSubject<any>(null);
     this.redraw();  
   }
 
   ngAfterViewInit() {
+    // subscribe to "select", used to update the url with a "selected" query-parameter
     this.graph.select.subscribe((n: NodeItem) => {
       this.router.navigate(['/nodes/ctx1'], { queryParams: { selected: n.id } });
     });
-
-
   }
 
-  relayout() {
+  redraw() {
+    this.nodeitems = this.store.state.nlist.map(n => this.store.state.nodes[n]);
+    this.linkitems = this.store.state.llist.map(l => this.store.state.links[l]);
+    this.graph.update();
+  }
+
+  relayoutClicked() {
     let sorted = sortGraphItems(this.graph.nodes,this.graph.links);
     this.store.sendAction({type: "UPDATESORTORDER", nodeIds: sorted.nodeIds, linkIds: sorted.linkIds }).subscribe((x) => {
       this.redraw();
     })
   }
 
-  redraw() {
-    this.nodeitems = this.store.state.nlist.map(n => this.store.state.nodes[n]);
-    this.linkitems = this.store.state.llist.map(l => this.store.state.links[l])
-    this.update$.next(null);
-  }
 
+  // Context-Menu Stuff
+  // ------------------
   contextmenudata: ContextMenuData = null;
 
   showContextMenu(item: Item, x: number, y: number){
@@ -102,7 +96,7 @@ export class MygraphComponent implements OnInit, AfterViewInit {
 
   deleteNode(node: NodeItem) {    
     this.store.sendAction({type: "DELETENODE", nodeId: node.id}).subscribe(x=>{
-      this.router.navigate([], {queryParams: { selected: null }, queryParamsHandling: 'merge'});
+      this.router.navigate([], {queryParams: { selected: null }, queryParamsHandling: 'merge'});  // to remove "selected" query parameter
       this.redraw();
     });
   }
