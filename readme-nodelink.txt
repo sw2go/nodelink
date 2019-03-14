@@ -45,24 +45,36 @@ npm install @angular/cdk@6 --save
 npm install d3 --save
 
 
+Later Update:
+-------------
+1. on github ngx-graph updated to latest swimlane version
+2. all files from projects in ngx-graph copied to nodelink projects
+3. Apply fixes to graph.component.ts
 
-Firefox issues:
----------------
+Fix 1: for Firefox issues:
+--------------------------
 [WDS] Disconnected! in sockjs.js / zone.js
 Hack! in angular.json at "architect", "serve", "options" set "disableHostCheck": true
 
 ReferenceError: TouchEvent is not defined
 ./projects/swimlane/ngx-graph/src/lib/graph/graph.component.ts:958:22
 
-Hack! commented out the @HostListener('document:touchmove', ['$event']) in graph.component.ts
+Hack Solution in graph.component.ts! 
+-> comment out the @HostListener('document:touchmove', ['$event']) 
 
-Problem Link-Labels were not updated ...
+Fix 2: Link-Labels are not updated ...
+--------------------------------------
 - reason was that this._oldLinks contains old links ( with old labels ) 
 - they were taken as basis for the newLink ( without considering new values in this.graph.edges
-see ./projects/swimlane/ngx-graph/src/lib/graph/graph.component.ts      // fix 2 begin
 
-
-
+Hack Solution in graph.component.ts! 
+-> find const normKey = edgeLabelId.replace(/[^\w-]*/g, '');
+-> add to the if (!oldLink) { } the following "else"
+   else {   // solution for "link-labels were not updated ..."
+     let edge = this.graph.edges.find(nl => `${nl.source}${nl.target}` === normKey) || edgeLabel;
+     if (edge)
+     oldLink.label = edge.label;   // maybe add others if they need to be displayed in graph
+   }
 
 
 General Tips:

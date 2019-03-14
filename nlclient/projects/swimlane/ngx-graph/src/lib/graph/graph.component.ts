@@ -42,8 +42,6 @@ import { Node, ClusterNode } from '../models/node.model';
 import { Graph } from '../models/graph.model';
 import { id } from '../utils/id';
 
-console.log('EL REF', ElementRef);
-
 /**
  * Matrix
  */
@@ -59,159 +57,52 @@ export interface Matrix {
 @Component({
   selector: 'ngx-graph',
   styleUrls: ['./graph.component.scss'],
-  template: `
-  <ngx-charts-chart [view]="[width, height]" [showLegend]="legend" [legendOptions]="legendOptions" (legendLabelClick)="onClick($event)"
-  (legendLabelActivate)="onActivate($event)" (legendLabelDeactivate)="onDeactivate($event)" mouseWheel (mouseWheelUp)="onZoom($event, 'in')"
-  (mouseWheelDown)="onZoom($event, 'out')">
-  <svg:g *ngIf="initialized && graph" [attr.transform]="transform" (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)"
-    class="graph chart">
-    <defs>
-      <ng-template *ngIf="defsTemplate" [ngTemplateOutlet]="defsTemplate">
-      </ng-template>
-      <svg:path class="text-path" *ngFor="let link of graph.edges" [attr.d]="link.textPath" [attr.id]="link.id">
-      </svg:path>
-    </defs>
-    <svg:rect class="panning-rect" [attr.width]="dims.width * 100" [attr.height]="dims.height * 100" [attr.transform]="'translate(' + ((-dims.width || 0) * 50) +',' + ((-dims.height || 0) *50) + ')' "
-      (mousedown)="isPanning = true" />
-      <svg:g class="clusters">
-        <svg:g #clusterElement *ngFor="let node of graph.clusters; trackBy: trackNodeBy" class="node-group" [id]="node.id" [attr.transform]="node.transform"
-          (click)="onClick(node)">
-          <ng-template *ngIf="clusterTemplate" [ngTemplateOutlet]="clusterTemplate" [ngTemplateOutletContext]="{ $implicit: node }">
-          </ng-template>
-          <svg:g *ngIf="!clusterTemplate" class="node cluster">
-            <svg:rect [attr.width]="node.dimension.width" [attr.height]="node.dimension.height" [attr.fill]="node.data?.color" />
-            <svg:text alignment-baseline="central" [attr.x]="10" [attr.y]="node.dimension.height / 2">{{node.label}}</svg:text>
-          </svg:g>
-        </svg:g>
-      </svg:g>
-      <svg:g class="links">
-      <svg:g #linkElement *ngFor="let link of graph.edges; trackBy: trackLinkBy" class="link-group" [id]="link.id">
-        <ng-template *ngIf="linkTemplate" [ngTemplateOutlet]="linkTemplate" [ngTemplateOutletContext]="{ $implicit: link }">
-        </ng-template>
-        <svg:path *ngIf="!linkTemplate" class="edge" [attr.d]="link.line" />
-      </svg:g>
-    </svg:g>
-    <svg:g class="nodes">
-      <svg:g #nodeElement *ngFor="let node of graph.nodes; trackBy: trackNodeBy" class="node-group" [id]="node.id" [attr.transform]="node.transform"
-        (click)="onClick(node)" (mousedown)="onNodeMouseDown($event, node)">
-        <ng-template *ngIf="nodeTemplate" [ngTemplateOutlet]="nodeTemplate" [ngTemplateOutletContext]="{ $implicit: node }">
-        </ng-template>
-        <svg:circle *ngIf="!nodeTemplate" r="10" [attr.cx]="node.dimension.width / 2" [attr.cy]="node.dimension.height / 2" [attr.fill]="node.data?.color"
-        />
-      </svg:g>
-    </svg:g>
-  </svg:g>
-</ngx-charts-chart>
-  `,
+  templateUrl: 'graph.component.html',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   animations: [trigger('link', [ngTransition('* => *', [animate(500, style({ transform: '*' }))])])]
 })
 export class GraphComponent extends BaseChartComponent implements OnInit, OnChanges, OnDestroy, AfterViewInit {
-  @Input()
-  legend: boolean = false;
+  @Input() legend: boolean = false;
+  @Input() nodes: Node[] = [];
+  @Input() clusters: ClusterNode[] = [];
+  @Input() links: Edge[] = [];
+  @Input() activeEntries: any[] = [];
+  @Input() curve: any;
+  @Input() draggingEnabled = true;
+  @Input() nodeHeight: number;
+  @Input() nodeMaxHeight: number;
+  @Input() nodeMinHeight: number;
+  @Input() nodeWidth: number;
+  @Input() nodeMinWidth: number;
+  @Input() nodeMaxWidth: number;
+  @Input() panningEnabled = true;
+  @Input() enableZoom = true;
+  @Input() zoomSpeed = 0.1;
+  @Input() minZoomLevel = 0.1;
+  @Input() maxZoomLevel = 4.0;
+  @Input() autoZoom = false;
+  @Input() panOnZoom = true;
+  @Input() autoCenter = false;
+  @Input() update$: Observable<any>;
+  @Input() center$: Observable<any>;
+  @Input() zoomToFit$: Observable<any>;
+  @Input() panToNode$: Observable<any>;
+  @Input() layout: string | Layout;
+  @Input() layoutSettings: any;
 
-  @Input()
-  nodes: Node[] = [];
+  @Output() activate: EventEmitter<any> = new EventEmitter();
+  @Output() deactivate: EventEmitter<any> = new EventEmitter();
+  @Output() zoomChange: EventEmitter<number> = new EventEmitter();
 
-  @Input()
-  clusters: ClusterNode[] = [];
+  @ContentChild('linkTemplate') linkTemplate: TemplateRef<any>;
+  @ContentChild('nodeTemplate') nodeTemplate: TemplateRef<any>;
+  @ContentChild('clusterTemplate') clusterTemplate: TemplateRef<any>;
+  @ContentChild('defsTemplate') defsTemplate: TemplateRef<any>;
 
-  @Input()
-  links: Edge[] = [];
-
-  @Input()
-  activeEntries: any[] = [];
-
-  @Input()
-  curve: any;
-
-  @Input()
-  draggingEnabled = true;
-
-  @Input()
-  nodeHeight: number;
-
-  @Input()
-  nodeMaxHeight: number;
-
-  @Input()
-  nodeMinHeight: number;
-
-  @Input()
-  nodeWidth: number;
-
-  @Input()
-  nodeMinWidth: number;
-
-  @Input()
-  nodeMaxWidth: number;
-
-  @Input()
-  panningEnabled = true;
-
-  @Input()
-  enableZoom = true;
-
-  @Input()
-  zoomSpeed = 0.1;
-
-  @Input()
-  minZoomLevel = 0.1;
-
-  @Input()
-  maxZoomLevel = 4.0;
-
-  @Input()
-  autoZoom = false;
-
-  @Input()
-  panOnZoom = true;
-
-  @Input()
-  autoCenter = false;
-
-  @Input()
-  update$: Observable<any>;
-
-  @Input()
-  center$: Observable<any>;
-
-  @Input()
-  zoomToFit$: Observable<any>;
-
-  @Input()
-  layout: string | Layout;
-
-  @Input()
-  layoutSettings: any;
-
-  @Output()
-  activate: EventEmitter<any> = new EventEmitter();
-
-  @Output()
-  deactivate: EventEmitter<any> = new EventEmitter();
-
-  @ContentChild('linkTemplate')
-  linkTemplate: TemplateRef<any>;
-
-  @ContentChild('nodeTemplate')
-  nodeTemplate: TemplateRef<any>;
-
-  @ContentChild('clusterTemplate')
-  clusterTemplate: TemplateRef<any>;
-
-  @ContentChild('defsTemplate')
-  defsTemplate: TemplateRef<any>;
-
-  @ViewChild(ChartComponent, { read: ElementRef })
-  chart: ElementRef;
-
-  @ViewChildren('nodeElement')
-  nodeElements: QueryList<ElementRef>;
-
-  @ViewChildren('linkElement')
-  linkElements: QueryList<ElementRef>;
+  @ViewChild(ChartComponent, { read: ElementRef }) chart: ElementRef;
+  @ViewChildren('nodeElement') nodeElements: QueryList<ElementRef>;
+  @ViewChildren('linkElement') linkElements: QueryList<ElementRef>;
 
   graphSubscription: Subscription = new Subscription();
   subscriptions: Subscription[] = [];
@@ -319,18 +210,23 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
         })
       );
     }
+
+    if (this.panToNode$) {
+      this.subscriptions.push(
+        this.panToNode$.subscribe((nodeId: string) => {
+          this.panToNodeId(nodeId);
+        })
+      );
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log(changes);
     const { layout, layoutSettings, nodes, clusters, links } = changes;
     this.setLayout(this.layout);
     if (layoutSettings) {
       this.setLayoutSettings(this.layoutSettings);
     }
-    if (nodes || clusters || links) {
-      this.update();
-    }
+    this.update();
   }
 
   setLayout(layout: string | Layout): void {
@@ -383,7 +279,6 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
    */
   update(): void {
     super.update();
-
     if (!this.curve) {
       this.curve = shape.curveBundle.beta(1);
     }
@@ -404,6 +299,53 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
       this.updateTransform();
       this.initialized = true;
     });
+  }
+
+  /**
+   * Creates the dagre graph engine
+   *
+   * @memberOf GraphComponent
+   */
+  createGraph(): void {
+    this.graphSubscription.unsubscribe();
+    this.graphSubscription = new Subscription();
+    const initializeNode = n => {
+      if (!n.meta) {
+        n.meta = {};
+      }
+      if (!n.id) {
+        n.id = id();
+      }
+      if (!n.dimension) {
+        n.dimension = {
+          width: this.nodeWidth ? this.nodeWidth : 30,
+          height: this.nodeHeight ? this.nodeHeight : 30
+        };
+
+        n.meta.forceDimensions = false;
+      } else {
+        n.meta.forceDimensions = n.meta.forceDimensions === undefined ? true : n.meta.forceDimensions;
+      }
+      n.position = {
+        x: 0,
+        y: 0
+      };
+      n.data = n.data ? n.data : {};
+      return n;
+    };
+
+    this.graph = {
+      nodes: [...this.nodes].map(initializeNode),
+      clusters: [...(this.clusters || [])].map(initializeNode),
+      edges: [...this.links].map(e => {
+        if (!e.id) {
+          e.id = id();
+        }
+        return e;
+      })
+    };
+
+    requestAnimationFrame(() => this.draw());
   }
 
   /**
@@ -439,9 +381,7 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
       if (!n.data) {
         n.data = {};
       }
-      n.data = {
-        color: this.colors.getColor(this.groupResultsBy(n))
-      };
+      n.data.color = this.colors.getColor(this.groupResultsBy(n));
     });
     (this.graph.clusters || []).map(n => {
       n.transform = `translate(${n.position.x - n.dimension.width / 2 || 0}, ${n.position.y - n.dimension.height / 2 ||
@@ -449,9 +389,7 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
       if (!n.data) {
         n.data = {};
       }
-      n.data = {
-        color: this.colors.getColor(this.groupResultsBy(n))
-      };
+      n.data.color = this.colors.getColor(this.groupResultsBy(n));
     });
 
     // Update the labels to the new positions
@@ -464,7 +402,6 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
       if (!oldLink) {
         oldLink = this.graph.edges.find(nl => `${nl.source}${nl.target}` === normKey) || edgeLabel;
       }
-
       // fix begin
       else {   // solution for "link-labels were not updated ..."
         let edge = this.graph.edges.find(nl => `${nl.source}${nl.target}` === normKey) || edgeLabel;
@@ -472,6 +409,7 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
           oldLink.label = edge.label;   // maybe add others if they need to be displayed in graph
       }
       // fix end 
+
       oldLink.oldLine = oldLink.line;
 
       const points = edgeLabel.points;
@@ -537,15 +475,15 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
         // calculate the height
         let dims;
         try {
-          dims = nativeElement.getBoundingClientRect();
+          dims = nativeElement.getBBox();
         } catch (ex) {
           // Skip drawing if element is not displayed - Firefox would throw an error here
           return;
         }
-        if (this.nodeHeight) {
-          node.dimension.height = this.nodeHeight;
+        if (this.nodeHeight) {          
+          node.dimension.height = node.dimension.height && node.meta.forceDimensions ? node.dimension.height : this.nodeHeight;
         } else {
-          node.dimension.height = dims.height;
+          node.dimension.height = node.dimension.height && node.meta.forceDimensions ? node.dimension.height : dims.height;
         }
 
         if (this.nodeMaxHeight) {
@@ -556,20 +494,32 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
         }
 
         if (this.nodeWidth) {
-          node.dimension.width = this.nodeWidth;
+          node.dimension.width =  node.dimension.width && node.meta.forceDimensions ? node.dimension.width : this.nodeWidth;
         } else {
           // calculate the width
           if (nativeElement.getElementsByTagName('text').length) {
-            let textDims;
+            let maxTextDims;
             try {
-              textDims = nativeElement.getElementsByTagName('text')[0].getBBox();
+              for (const textElem of nativeElement.getElementsByTagName('text')) {
+                const currentBBox = textElem.getBBox();
+                if (!maxTextDims) {
+                  maxTextDims = currentBBox;
+                } else {
+                  if (currentBBox.width > maxTextDims.width) {
+                    maxTextDims.width = currentBBox.width;
+                  }
+                  if (currentBBox.height > maxTextDims.height) {
+                    maxTextDims.height = currentBBox.height;
+                  }
+                }
+              }
             } catch (ex) {
               // Skip drawing if element is not displayed - Firefox would throw an error here
               return;
             }
-            node.dimension.width = textDims.width + 20;
+            node.dimension.width = node.dimension.width && node.meta.forceDimensions ? node.dimension.width : maxTextDims.width + 20;
           } else {
-            node.dimension.width = dims.width;
+            node.dimension.width = node.dimension.width && node.meta.forceDimensions ? node.dimension.width : dims.width;
           }
         }
 
@@ -608,43 +558,6 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
           .attr('d', edge.textPath);
       }
     });
-  }
-
-  /**
-   * Creates the dagre graph engine
-   *
-   * @memberOf GraphComponent
-   */
-  createGraph(): void {
-    this.graphSubscription.unsubscribe();
-    this.graphSubscription = new Subscription();
-    const initializeNode = n => {
-      if (!n.id) {
-        n.id = id();
-      }
-      n.dimension = {
-        width: 30,
-        height: 30
-      };
-      n.position = {
-        x: 0,
-        y: 0
-      };
-      n.data = n.data ? n.data : {};
-      return n;
-    };
-    this.graph = {
-      nodes: [...this.nodes].map(initializeNode),
-      clusters: [...(this.clusters || [])].map(initializeNode),
-      edges: [...this.links].map(e => {
-        if (!e.id) {
-          e.id = id();
-        }
-        return e;
-      })
-    };
-
-    requestAnimationFrame(() => this.draw());
   }
 
   /**
@@ -716,10 +629,9 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
       const svgPoint = point.matrixTransform(svgGroup.getScreenCTM().inverse());
 
       // Panzoom
-      const NO_ZOOM_LEVEL = 1;
-      this.pan(svgPoint.x, svgPoint.y, NO_ZOOM_LEVEL);
+      this.pan(svgPoint.x, svgPoint.y, true);
       this.zoom(zoomFactor);
-      this.pan(-svgPoint.x, -svgPoint.y, NO_ZOOM_LEVEL);
+      this.pan(-svgPoint.x, -svgPoint.y, true);
     } else {
       this.zoom(zoomFactor);
     }
@@ -728,8 +640,11 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
   /**
    * Pan by x/y
    *
+   * @param x
+   * @param y
    */
-  pan(x: number, y: number, zoomLevel: number = this.zoomLevel): void {
+  pan(x: number, y: number, ignoreZoomLevel: boolean = false): void {
+    const zoomLevel = ignoreZoomLevel ? 1 : this.zoomLevel;
     this.transformationMatrix = transform(this.transformationMatrix, translate(x / zoomLevel, y / zoomLevel));
 
     this.updateTransform();
@@ -740,8 +655,17 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
    *
    */
   panTo(x: number, y: number): void {
-    this.transformationMatrix.e = x === null || x === undefined || isNaN(x) ? this.transformationMatrix.e : Number(x);
-    this.transformationMatrix.f = y === null || y === undefined || isNaN(y) ? this.transformationMatrix.f : Number(y);
+    if (x === null || x === undefined || isNaN(x) || y === null || y === undefined || isNaN(y)) {
+      return;
+    }
+
+    const panX = -this.panOffsetX - x * this.zoomLevel + this.dims.width / 2;
+    const panY = -this.panOffsetY - y * this.zoomLevel + this.dims.height / 2;
+
+    this.transformationMatrix = transform(
+      this.transformationMatrix,
+      translate(panX / this.zoomLevel, panY / this.zoomLevel)
+    );
 
     this.updateTransform();
   }
@@ -752,7 +676,7 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
    */
   zoom(factor: number): void {
     this.transformationMatrix = transform(this.transformationMatrix, scale(factor, factor));
-
+    this.zoomChange.emit(this.zoomLevel);
     this.updateTransform();
   }
 
@@ -763,8 +687,9 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
   zoomTo(level: number): void {
     this.transformationMatrix.a = isNaN(level) ? this.transformationMatrix.a : Number(level);
     this.transformationMatrix.d = isNaN(level) ? this.transformationMatrix.d : Number(level);
-
+    this.zoomChange.emit(this.zoomLevel);
     this.updateTransform();
+    this.update();
   }
 
   /**
@@ -961,9 +886,8 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
    * On touch move event, used for panning.
    *
    */
-  /* due to firefox problem
-  @HostListener('document:touchmove', ['$event'])
-  */
+  // fix 1
+  //@HostListener('document:touchmove', ['$event'])
   onTouchMove($event: TouchEvent): void {
     if (this.isPanning && this.panningEnabled) {
       const clientX = $event.changedTouches[0].clientX;
@@ -976,7 +900,6 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
       this.pan(movementX, movementY);
     }
   }
-  
 
   /**
    * On touch end event to disable panning.
@@ -1022,10 +945,7 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
    * Center the graph in the viewport
    */
   center(): void {
-    this.panTo(
-      this.dims.width / 2 - (this.graphDims.width * this.zoomLevel) / 2,
-      this.dims.height / 2 - (this.graphDims.height * this.zoomLevel) / 2
-    );
+    this.panTo(this.graphDims.width / 2, this.graphDims.height / 2);
   }
 
   /**
@@ -1035,9 +955,29 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
     const heightZoom = this.dims.height / this.graphDims.height;
     const widthZoom = this.dims.width / this.graphDims.width;
     const zoomLevel = Math.min(heightZoom, widthZoom, 1);
+
+    if (zoomLevel <= this.minZoomLevel || zoomLevel >= this.maxZoomLevel) {
+      return;
+    }
+    
     if (zoomLevel !== this.zoomLevel) {
       this.zoomLevel = zoomLevel;
       this.updateTransform();
+      this.zoomChange.emit(this.zoomLevel);
     }
+    this.update();
+  }
+
+  /**
+   * Pans to the node
+   * @param nodeId 
+   */
+  panToNodeId(nodeId: string): void {
+    const node = this.nodes.find(n => n.id === nodeId);
+    if (!node) {
+      return;
+    }
+
+    this.panTo(node.position.x, node.position.y);
   }
 }
