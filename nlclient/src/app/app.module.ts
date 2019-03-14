@@ -16,6 +16,8 @@ import { Store } from './state/store';
 import { reducer, initState } from './state/reducer';
 import { StoreAndRouterConnector } from './state/storeandrouterconnector';
 import { MynodeComponent } from './mynode/mynode.component';
+import { Router } from '@angular/router';
+import { LinkComponent } from './link/link.component';
 
 
 
@@ -25,7 +27,8 @@ import { MynodeComponent } from './mynode/mynode.component';
     MygraphComponent,
     ModalAddNodeComponent,
     ContextMenuComponent,
-    MynodeComponent
+    MynodeComponent,
+    LinkComponent
   ],
   entryComponents: [
     ModalAddNodeComponent
@@ -41,7 +44,7 @@ import { MynodeComponent } from './mynode/mynode.component';
   ],
   providers: [
     NodeService,
-    { provide: Store, useFactory: (nservice) => new Store(reducer(nservice), initState), deps: [NodeService] },
+    { provide: Store, useFactory: (nservice, router) => new Store(reducer(nservice, router), initState), deps: [NodeService, Router] },
     StoreAndRouterConnector
   ],
   bootstrap: [AppComponent]

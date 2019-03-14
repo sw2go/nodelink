@@ -56,6 +56,15 @@ ReferenceError: TouchEvent is not defined
 
 Hack! commented out the @HostListener('document:touchmove', ['$event']) in graph.component.ts
 
+Problem Link-Labels were not updated ...
+- reason was that this._oldLinks contains old links ( with old labels ) 
+- they were taken as basis for the newLink ( without considering new values in this.graph.edges
+see ./projects/swimlane/ngx-graph/src/lib/graph/graph.component.ts      // fix 2 begin
+
+
+
+
+
 General Tips:
 Check Source-Code of graph.component.ts and other classes in the projects folder.
 

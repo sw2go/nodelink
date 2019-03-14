@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { NodeItem } from './../model/nodeitem';
 import { Observable, of, throwError } from 'rxjs';
 import { LinkItem } from '../model/linkitem';
-import { map, switchMap } from 'rxjs/operators';
+import { map, switchMap, tap } from 'rxjs/operators';
 
 @Injectable()
 export class NodeService {
@@ -42,6 +42,13 @@ export class NodeService {
     return "L" + this.id.toString();
   }
 
+  // liefert neuen Node
+  addNode(targetNodeName: string): Observable<NodeItem> {    
+    let targetNode = new NodeItem(this.newNodeId(), targetNodeName);
+    this.nodes.push(targetNode);
+    return of(targetNode);
+  }
+
   // liefert neuen Link und Node
   addLinkAndNode(sourceNodeId: string, targetNodeName: string): Observable<{link: LinkItem, node: NodeItem}> {
     let six = this.nodes.findIndex(n => n.id == sourceNodeId);    
@@ -73,13 +80,26 @@ export class NodeService {
   }
 
   updateNode(nodeId: string, name: string): Observable<NodeItem> {
-    let n = this.nodes.find(n => n.id == nodeId);
-    if (!n)
+    let nix = this.nodes.findIndex(n => n.id == nodeId);
+    if (nix<0)
       throw new RangeError("nodeId " + nodeId + " not found");
-    let upd = {...n, label: name};
-    this.nodes[nodeId] = upd;
+    //let upd: NodeItem = {...this.nodes[nix], label: name} as NodeItem;
+    let upd: NodeItem = new NodeItem(nodeId, name); // da obige Zeile mit spread-operator immer ein "object" statt ein NodeItem liefert
+    this.nodes[nix] = upd;
     if (name == "e")
-      throw new Error('update fialed with E!');
+      throw new Error('update failed with E!');
+    return of (upd);
+  }
+
+  updateLink(linkId: string, name: string): Observable<LinkItem> {
+    let lix = this.links.findIndex(l => l.id == linkId);
+    if (lix<0)
+      throw new RangeError("linkId " + linkId + " not found");
+    let oldLink = this.links[lix];
+    let upd: LinkItem = new LinkItem(oldLink.id, oldLink.source, oldLink.target, name); // da obige Zeile mit spread-operator immer ein "object" statt ein NodeItem liefert
+    this.links[lix] = upd;
+    if (name == "e")
+      throw new Error('update failed with E!');
     return of (upd);
   }
   
@@ -133,10 +153,44 @@ export class NodeService {
 
   getLinkableNodes(sourceNode: NodeItem): Observable<NodeItem[]> {
     return of(this.nodes).pipe(
-      map(nodes => nodes.filter(n => n.id != sourceNode.id && (this.links.findIndex(l => l.source == sourceNode.id && l.target == n.id) < 0))
+      map(nodes => nodes.filter(n => sourceNode && n.id != sourceNode.id && (this.links.findIndex(l => l.source == sourceNode.id && l.target == n.id) < 0))
     ));
   }
+
+  hrefGraphData(): string {
+    let data = { nodes: this.nodes.map(n => new NodeItem(n.id, n.label)), links: this.links.map(l => new LinkItem(l.id, l.source, l.target, l.label)) };
+    let json = JSON.stringify(data);
+    let blob = new Blob([json], {type: "application/json"});
+    return URL.createObjectURL(blob);
+  }
+
+  setFromFile(file: File): Observable<boolean> {
+
+    return readFile(file).pipe(        
+      map(str => {
+        let data: { nodes: NodeItem[], links: LinkItem[] } = JSON.parse(str);
+        this.nodes = data.nodes;
+        this.links = data.links;
+        return true;
+      })
+    );
+  }
 }
+
+
+const readFile = (blob: Blob): Observable<string> => Observable.create(obs => {
+  if (!(blob instanceof Blob)) {
+    obs.error(new Error('`blob` must be an instance of File or Blob.'));
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onerror = err => obs.error(err);
+  reader.onabort = err => obs.error(err);
+  reader.onload = () => obs.next(reader.result);
+  reader.onloadend = () => obs.complete();
+  return reader.readAsText(blob);
+});
 
 
 

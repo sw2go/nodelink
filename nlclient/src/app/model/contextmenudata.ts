@@ -11,6 +11,7 @@ export class ContextMenuData  {
     ){
     };
 
+    public addNode: ContextMenuCallback;
     public addLink: ContextMenuCallback;
     public delNode: ContextMenuCallback;
     public delLink: ContextMenuCallback;
@@ -19,7 +20,8 @@ export class ContextMenuData  {
 
 type ContextMenuCallback = () => void;
 
-export enum CtxType {
-    Node,
-    Link
+export enum CtxType {   // Beware Constants are used in context-menu html-template
+    Panel = 0,
+    Node = 1,
+    Link = 2
 }

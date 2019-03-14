@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild } from '@angular/core';
 import { NodeItem } from './../model/nodeitem';
 import { LinkItem } from './../model/linkitem';
 import { LayoutService } from '@swimlane/ngx-graph/lib/graph/layouts/layout.service';
@@ -6,7 +6,7 @@ import { GraphComponent  } from '@swimlane/ngx-graph/lib/graph/graph.component'
 import { Layout } from '@swimlane/ngx-graph/lib/models';
 import { DagreSettings, Orientation } from '@swimlane/ngx-graph/lib/graph/layouts/dagre';
 
-import { BehaviorSubject} from 'rxjs';
+import { Observable, Subscription} from 'rxjs';
 
 import { NodeService } from '../service/node.service';
 
@@ -25,11 +25,14 @@ import { sortGraphItems } from './graphsortpolicy';
   templateUrl: './mygraph.component.html',
   styleUrls: ['./mygraph.component.scss']
 })
-export class MygraphComponent implements OnInit, AfterViewInit {
+export class MygraphComponent implements OnInit, OnDestroy, AfterViewInit {
+
+  storesub: Subscription;
+  store$: Observable<State>;
 
   modalRef: BsModalRef;
 
-  selectedNodeId: string;
+  selectedGraphId: string;
 
   @ViewChild(GraphComponent) 
   graph: GraphComponent;
@@ -42,34 +45,40 @@ export class MygraphComponent implements OnInit, AfterViewInit {
     this.layout = layoutservice.getLayout("dagre"); // "dagreCluster" , "dagreNodesOnly", "d3ForceDirected",  "colaForceDirected"  
     let dagreLayoutSettings: DagreSettings = this.layout.settings;
     dagreLayoutSettings.orientation = Orientation.TOP_TO_BOTTOM;
+    this.store$ = store.select();
   }
 
   ngOnInit() {
-    // subscribe to query-parameter "selected", used to update the display of nodes in graph
+    // subscribe to query-parameter "selected", used to update the display-style of the selected node in graph
     this.activatedRoute.queryParams.subscribe(qp => {
-      this.selectedNodeId = (this.store.state.nlist.some(n => n == qp.selected )) ? qp.selected : null;
+      this.selectedGraphId = (this.store.state.nlist.some(n => n == qp.selected ) || this.store.state.llist.some(l => l == qp.selected )) ? qp.selected : null;
+      console.log("after new query parameter");
     });
-    this.redraw();  
+      
+    // subscribe to store, used to redraw graph after any state changes
+    this.storesub = this.store.select().subscribe( state => {
+      this.linkitems = state.llist.map(l => state.links[l]);
+      this.nodeitems = state.nlist.map(n => state.nodes[n]);
+      this.graph.update();
+      console.log("after redraw");
+    });
+  }
+  selectionChanged(id: string, ctx: string) {
+    this.router.navigate(['nodes', ctx], { queryParams: { selected: id } });
+  };
+
+  ngOnDestroy() {
+    this.storesub.unsubscribe();  // unsubscribe here from state if you don't use "| async" in the html-template
   }
 
   ngAfterViewInit() {
-    // subscribe to "select", used to update the url with a "selected" query-parameter
-    this.graph.select.subscribe((n: NodeItem) => {
-      this.router.navigate(['/nodes/ctx1'], { queryParams: { selected: n.id } });
-    });
-  }
+    // subscribe to "graph.select", used to update the url with a "selected" query-parameter
 
-  redraw() {
-    this.nodeitems = this.store.state.nlist.map(n => this.store.state.nodes[n]);
-    this.linkitems = this.store.state.llist.map(l => this.store.state.links[l]);
-    this.graph.update();
   }
 
   relayoutClicked() {
     let sorted = sortGraphItems(this.graph.nodes,this.graph.links);
-    this.store.sendAction({type: "UPDATESORTORDER", nodeIds: sorted.nodeIds, linkIds: sorted.linkIds }).subscribe((x) => {
-      this.redraw();
-    })
+    this.store.sendAction({type: "UPDATESORTORDER", nodeIds: sorted.nodeIds, linkIds: sorted.linkIds });
   }
 
 
@@ -77,9 +86,15 @@ export class MygraphComponent implements OnInit, AfterViewInit {
   // ------------------
   contextmenudata: ContextMenuData = null;
 
-  showContextMenu(item: Item, x: number, y: number){
-    let type: CtxType = (item instanceof NodeItem) ? CtxType.Node : CtxType.Link;
-    this.contextmenudata = new ContextMenuData(type, item.id, x, y);
+  showContextMenu(item: Item, x: number, y: number) {
+
+    if (item==null && this.contextmenudata != null) // da das "contextmenu" event hochpropagiert wird nach dem Node-Klick auch noch ein Panel-Klick ausgelöst 
+      return;                                       // deshalb -> wenn Menü bereits offen -> Abbruch
+
+    let type: CtxType = (item == null) ? CtxType.Panel : ((item instanceof NodeItem) ? CtxType.Node : CtxType.Link );
+    let id: string = (item) ? item.id : null;
+    this.contextmenudata = new ContextMenuData(type, id, x, y);
+    this.contextmenudata.addNode = () => { this.showAddLinkNode(item as NodeItem) };
     this.contextmenudata.addLink = () => { this.showAddLinkNode(item as NodeItem) };
     this.contextmenudata.delNode = () => { this.deleteNode(item as NodeItem) };
     this.contextmenudata.delLink = () => { this.deleteLink(item as LinkItem) };
@@ -88,27 +103,26 @@ export class MygraphComponent implements OnInit, AfterViewInit {
   showAddLinkNode(sourceNode: NodeItem) {
     let config: ModalOptions = { initialState: { sourceNode: sourceNode } };
     this.modalRef = this.modalservice.show(ModalAddNodeComponent, config);
-    this.modalRef.content.onClose.subscribe(result => {
-      if (result)
-        this.redraw();
-    });
+    this.modalRef.content.onClose.subscribe(result => { /*falls mal nötig*/ } );
   }
 
   deleteNode(node: NodeItem) {    
-    this.store.sendAction({type: "DELETENODE", nodeId: node.id}).subscribe(x=>{
-      this.router.navigate([], {queryParams: { selected: null }, queryParamsHandling: 'merge'});  // to remove "selected" query parameter
-      this.redraw();
-    });
+    this.store.sendAction({type: "DELETENODE", nodeId: node.id});
   }
 
   deleteLink(link: LinkItem) {  
-    this.store.sendAction({ type: "DELETELINK" , linkId: link.id }).subscribe(x =>{
-      this.redraw();
-    });
+    this.store.sendAction({ type: "DELETELINK" , linkId: link.id });
   }
 
   hideContextMenu(){
     this.contextmenudata = null;
   }
 
+  saveGraphToFile(aElementRef: any) {
+    aElementRef.href = this.nodeservice.hrefGraphData();
+  }
+
+  loadGraphFromFile(file: File) {
+    this.store.sendAction({ type: "READFROMFILE" , file: file });
+  }
 }

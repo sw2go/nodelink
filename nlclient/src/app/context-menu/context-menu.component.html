@@ -1,7 +1,8 @@
 <div class="contextmenu" [ngStyle]="{'left.px': context.x, 'top.px': context.y}">
   <ul class="list-group">
-    <li *ngIf="context.type==0" class="list-group-item list-group-item-primary" (click)="context.addLink()">Add Link/Node</li>
-    <li *ngIf="context.type==0" class="list-group-item list-group-item-primary" (click)="context.delNode()">Remove Node</li>
-    <li *ngIf="context.type==1" class="list-group-item list-group-item-primary" (click)="context.delLink()">Remove Link</li>
+    <li *ngIf="context.type==0" class="list-group-item list-group-item-primary" (click)="context.addNode()">Add Node</li>
+    <li *ngIf="context.type==1" class="list-group-item list-group-item-primary" (click)="context.addLink()">Add Link/Node</li>
+    <li *ngIf="context.type==1" class="list-group-item list-group-item-primary" (click)="context.delNode()">Remove Node</li>
+    <li *ngIf="context.type==2" class="list-group-item list-group-item-primary" (click)="context.delLink()">Remove Link</li>
   </ul>
 </div>

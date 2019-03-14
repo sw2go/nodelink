@@ -44,16 +44,21 @@ export class ModalAddNodeComponent implements OnInit {
   }
 
   onConfirm(): void {
-    
-    let obs = (this.targetNodeId == 'new') 
-      ? this.store.sendAction({type: "ADDLINKANDNODE", sourceNodeId: this.sourceNode.id, targetNodeName: this.targetNodeName})
-      : this.store.sendAction({type: "ADDLINK", sourceNodeId: this.sourceNode.id, targetNodeId: this.targetNodeId});
+    if (this.targetNodeId == 'new' && !this.sourceNode) 
+      this.sendAction({type: "ADDNODE", targetNodeName: this.targetNodeName});
+    else if (this.targetNodeId == 'new' && this.sourceNode)
+      this.sendAction({type: "ADDLINKANDNODE", sourceNodeId: this.sourceNode.id, targetNodeName: this.targetNodeName});
+    else if (this.targetNodeId != 'new' && this.sourceNode)
+      this.sendAction({type: "ADDLINK", sourceNodeId: this.sourceNode.id, targetNodeId: this.targetNodeId});
+    else
+      throw new Error("invalid action");    
+  }
 
-    obs.subscribe(x => {
+  sendAction(action: Action) {
+    this.store.sendAction(action).subscribe(x => {
       this.onClose.next(true);
       this.bsModalRef.hide();  
     });
-
   }
 
   onCancel(): void {

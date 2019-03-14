@@ -6,8 +6,8 @@
 
   <div class="row">
 
-    <div class="col-10 card">
-      <div  style="height: calc( 100vh - 68px)">
+    <div class="col-9 card" (contextmenu)="showContextMenu(null, $event.clientX, $event.clientY)">
+      <div  style="height: calc( 100vh - 68px)"  >
         <ngx-graph class="chart-container"
           [layout]="layout"
           [nodes]="nodeitems"
@@ -33,13 +33,13 @@
           
           
           <ng-template #nodeTemplate let-node>
-            <svg:g class="node" (contextmenu)="showContextMenu(node, $event.clientX, $event.clientY)">
+            <svg:g class="node" (contextmenu)="showContextMenu(node, $event.clientX, $event.clientY)" (click)="selectionChanged(node.id, 'ctx1')">
               <svg:rect
                 [attr.width]="node.dimension.width"
                 [attr.height]="node.dimension.height"
                 [attr.fill]="node.data.color"
                 [attr.stroke]="'black'"
-                [attr.stroke-width]="(selectedNodeId == node.id) ? '3' : '0'"  
+                [attr.stroke-width]="(selectedGraphId == node.id) ? '3' : '0'"  
               />
               <svg:text alignment-baseline="central" [attr.x]="10" [attr.y]="node.dimension.height / 2">
                 {{node.label}}
@@ -47,28 +47,42 @@
             </svg:g>              
           </ng-template>
 
-          <ng-template #linkTemplate let-link>
-            <svg:g class="edge" (contextmenu)="showContextMenu(link, $event.clientX, $event.clientY)"  >
-              <svg:path class="line" stroke-width="2" marker-end="url(#arrow)"></svg:path>
-              <svg:text class="edge-label" text-anchor="middle">
+          <ng-template #linkTemplate let-link>              
+            <svg:g class="edge" (contextmenu)="showContextMenu(link, $event.clientX, $event.clientY)" (click)="selectionChanged(link.id, 'ctx2')"  >
+              <svg:path 
+                class="line" 
+                [attr.stroke-width]="(selectedGraphId == link.id) ? '3' : '2'" 
+                marker-end="url(#arrow)">
+              </svg:path>
+              <svg:text 
+                class="edge-label" 
+                text-anchor="middle">
                 <textPath
                   class="text-path"
                   [attr.href]="'#' + link.id"
                   [style.dominant-baseline]="link.dominantBaseline"
                   startOffset="50%">
-                  {{link.label}}
-                </textPath>
+                  {{link.label}}    
+                </textPath>                                       
               </svg:text>
             </svg:g>
-          </ng-template>            
+          </ng-template>         
         </ngx-graph>
-      </div>    
+      </div>
     </div>
 
-    <div class="col-2">
+    <div class="col-3">
       <div class="card">
-        <div class="card-body">
-            <button type="button" class="btn btn-primary float-right" (click)="relayoutClicked()">Relayout</button>
+        <div class="card-body text-right">
+            <button type="button" class="btn btn-primary" (click)="relayoutClicked()">Relayout</button>
+        </div>          
+      </div>
+      <div class="card mt-2">
+        <div class="card-body text-right">
+            <label class="btn btn-primary mb-0" style="cursor: pointer;" for="file_upload">Load</label>  
+            <input class="d-none" type="file" id="file_upload" #fileload (change)="loadGraphFromFile(fileload.files[0])" />
+
+            <a class="btn btn-primary float-right ml-3" href="" download="graf.json" (click)="saveGraphToFile($event.target)">Save</a>            
         </div>          
       </div>
       <router-outlet></router-outlet>

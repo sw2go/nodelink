@@ -1,12 +1,12 @@
-<div *ngIf="current" class="card mt-2">
+<div *ngIf="node$ | async as node" class="card mt-2">
   <div class="card-body">
     <h5 class="card-title">Node Context</h5>  
     <div class="input-group">
       <div class="input-group-prepend">
         <span class="input-group-text" id="basic-addon1">Name</span>
       </div>
-      <input #nodeLabel class="form-control" [value]="current.label">                    
+      <input #nodeLabel class="form-control" [value]="node.label" (keyup)="0" >                    
     </div>
-    <button class="btn btn-primary float-right mt-3" (click)="updateNode(nodeLabel.value)">Update</button> 
+    <button [disabled]="nodeLabel.value==node.label" class="btn btn-primary float-right mt-3" (click)="updateNode(node.id, nodeLabel.value)">Update</button> 
   </div>
 </div>

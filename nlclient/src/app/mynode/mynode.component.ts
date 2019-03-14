@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, Params } from '@angular/router';
 import { Store } from '../state/store';
 import { Action, State } from '../state/reducer';
 import { NodeItem } from '../model/nodeitem';
-import { from } from 'rxjs';
+import { from, Observable, combineLatest  } from 'rxjs';
+import { map, mergeMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-mynode',
@@ -12,20 +13,21 @@ import { from } from 'rxjs';
 })
 export class MynodeComponent implements OnInit {
 
-  current: NodeItem;
+  node$: Observable<NodeItem>;  // for use in html-template with async-pipe ( advantage: no code for unsubscribe required )
 
-  constructor(private activatedRoute: ActivatedRoute, private router: Router, private store: Store<State, Action>) { }
+  constructor(private activatedRoute: ActivatedRoute, private router: Router, private store: Store<State, Action>) {
 
-  ngOnInit() {
-    this.activatedRoute.queryParams.subscribe((qp) => {
-      this.current = this.store.state.nodes[qp.selected];
-    })
+    this.node$ = combineLatest(this.store.select(), this.activatedRoute.queryParams).pipe(
+      map(combined => (combined[0] as State).nodes[(combined[1] as Params).selected])
+    );
+
   }
 
-  updateNode(name: string) {
-    this.store.sendAction({type: "UPDATENODE", nodeId: this.current.id, name: name}).subscribe(x=>{
-      this.router.navigate([], {queryParamsHandling: 'merge'} );
-    }, e => console.log( "eeee " + e));
+  ngOnInit() {
+  }
+
+  updateNode(id: string, name: string) {
+    this.store.sendAction({type: "UPDATENODE", nodeId: id, name: name});
   }
 
 }

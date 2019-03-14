@@ -465,6 +465,13 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
         oldLink = this.graph.edges.find(nl => `${nl.source}${nl.target}` === normKey) || edgeLabel;
       }
 
+      // fix begin
+      else {   // solution for "link-labels were not updated ..."
+        let edge = this.graph.edges.find(nl => `${nl.source}${nl.target}` === normKey) || edgeLabel;
+        if (edge)
+          oldLink.label = edge.label;   // maybe add others if they need to be displayed in graph
+      }
+      // fix end 
       oldLink.oldLine = oldLink.line;
 
       const points = edgeLabel.points;

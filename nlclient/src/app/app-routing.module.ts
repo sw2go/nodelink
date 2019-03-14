@@ -3,13 +3,18 @@ import { Routes, RouterModule, UrlSegment } from '@angular/router';
 import { connectToStore } from './state/storeandrouterconnector';
 import { MygraphComponent } from './mygraph/mygraph.component';
 import { MynodeComponent } from './mynode/mynode.component';
+import { LinkComponent } from './link/link.component';
 
 const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'nodes' },
   { path: 'nodes', component: MygraphComponent,
     children: [
-      { path: "ctx1", component: MynodeComponent}
+      { path: "ctx1", component: MynodeComponent },
+      { path: "ctx2", component: LinkComponent }
     ]
+  },
+  {
+    path: 'nodesx', component: MygraphComponent
   }
 ];
 

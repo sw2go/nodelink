@@ -1,0 +1,12 @@
+<div *ngIf="item$ | async as item" class="card mt-2">
+    <div class="card-body">
+      <h5 class="card-title">Link Context</h5>  
+      <div class="input-group">
+        <div class="input-group-prepend">
+          <span class="input-group-text" id="basic-addon1">Name</span>
+        </div>
+        <input #itemLabel class="form-control" [value]="item.label" (keyup)="0" >                    
+      </div>
+      <button [disabled]="itemLabel.value==item.label" class="btn btn-primary float-right mt-3" (click)="updateItem(item.id, itemLabel.value)">Update</button> 
+    </div>
+  </div>
