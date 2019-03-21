@@ -58,14 +58,17 @@
                 class="edge-label" 
                 text-anchor="middle">
                 <textPath
-                  class="text-path"                 
+                  class="text-path"                      
                   [attr.href]="'#' + link.id"
                   [style.dominant-baseline]="link.dominantBaseline"
                   startOffset="50%">
-                  {{link.label}}    
-                </textPath>                                       
+                  {{link.label}}
+                </textPath> 
+                                                       
               </svg:text>
+              
             </svg:g>
+           
           </ng-template>         
         </ngx-graph>
       </div>

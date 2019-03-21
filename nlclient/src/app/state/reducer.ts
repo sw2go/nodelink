@@ -59,7 +59,10 @@ export function reducer(backend: NodeService, router: Router): Reducer<State, Ac
         const route = action.state.root.firstChild.firstChild; 
         const qp = action.state.root.queryParams;
         //console.log("reducer: ROUTER_NAVIGATION(" + route.routeConfig.path + ")");
-        if (route.routeConfig.path === "nodes" || route.routeConfig.path === "nodesx") {
+        if (route.routeConfig.path === "eg") {
+          return of(state);
+        }
+        else if (route.routeConfig.path === "nodes" || route.routeConfig.path === "nodesx") {
           
           let nid: string = qp.selected;
 

@@ -18,6 +18,7 @@ import { StoreAndRouterConnector } from './state/storeandrouterconnector';
 import { MynodeComponent } from './mynode/mynode.component';
 import { Router } from '@angular/router';
 import { LinkComponent } from './link/link.component';
+import { EasygraphComponent } from './easygraph/easygraph.component';
 
 
 
@@ -28,11 +29,13 @@ import { LinkComponent } from './link/link.component';
     ModalAddNodeComponent,
     ContextMenuComponent,
     MynodeComponent,
-    LinkComponent
+    LinkComponent,
+    EasygraphComponent
   ],
   entryComponents: [
     ModalAddNodeComponent
   ],
+  // schemas: [CUSTOM_ELEMENTS_SCHEMA],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
