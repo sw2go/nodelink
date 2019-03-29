@@ -34,4 +34,8 @@ export class MynodeComponent implements OnInit {
     this.store.sendAction({type: "UPDATENODE", nodeId: id, name: name});
   }
 
+  test() {
+    this.store.sendAction({type: "TEST"});
+  }
+
 }

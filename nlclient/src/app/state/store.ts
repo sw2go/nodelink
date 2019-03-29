@@ -30,13 +30,17 @@ export class Store<S, A> {
       }
       return obs.pipe(map(state => ({state, result: a.result, err: err })));
 
-    })).subscribe(pair => {
-      
-      console.log(this.state);
-      this.state = pair.state;
-      console.log(this.state);
-
-      this.stateSubject.next(this.state);
+    })).subscribe(pair => {          
+      if(this.state === pair.state) {
+        console.log("store: state unchanged");
+        // we don't update stateSubject
+      }
+      else {
+        console.log(this.state);  // alter Zustand
+        this.state = pair.state;
+        console.log(this.state);  // neuer Zustand
+        this.stateSubject.next(this.state);
+      }
 
       if (pair.err)
         pair.result.error(pair.err);
@@ -49,9 +53,8 @@ export class Store<S, A> {
 
   sendAction(action: A): Observable<boolean> {
     const res = new Subject<boolean>();
-    console.log("store: before sendAction");
+    console.log(action);
     this.actions.next({action, result: res});
-    console.log("store: after sendAction");
     return res;
   }
 

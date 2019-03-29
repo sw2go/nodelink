@@ -2,7 +2,7 @@
   <div *ngIf="true; let _disable"  class="card-body">  <!-- ngIf just to define and set the variable -->
     <h5 class="card-title">Node        
       <button [disabled]="_disable" class="btn btn-primary float-right mb-3" (click)="updateItem(item.id, itemLabel.value)">Update</button>
-      <button class="btn btn-primary float-right mb-3 mr-3" >Edit</button>
+      <button class="btn btn-primary float-right mb-3 mr-3" (click)="test()">Edit</button>
     </h5>  
     <div class="input-group">
       <div class="input-group-prepend">

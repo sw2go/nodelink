@@ -21,19 +21,14 @@ export type UpdateNode = { type: 'UPDATENODE', nodeId: string, name: string };
 export type UpdateLink = { type: 'UPDATELINK', linkId: string, name: string };
 export type ReadFromFile = { type: 'READFROMFILE', file: File };
 export type ChangeSelection = { type: 'CHANGESELECTION', id: string};
+export type Test = { type: 'TEST'};
 
-
-export type Rate = { type: 'RATE', talkId: number, rating: number };
-export type Unrate = { type: 'UNRATE', talkId: number, error: any };
 
 export type Action = RouterNavigation | UpdateSortOrder | DeleteLink |
- DeleteNode | AddNode | AddLink | AddLinkAndNode | UpdateNode | UpdateLink | Rate | Unrate |
- ReadFromFile | ChangeSelection;
+ DeleteNode | AddNode | AddLink | AddLinkAndNode | UpdateNode | UpdateLink |
+ ReadFromFile | ChangeSelection | Test;
 
 
-
-
- 
 function fetchStateData(backend: NodeService, state: State, nid: string): Observable<State> {
   return backend.getNodes().pipe(
     switchMap(n => backend.getLinks().pipe(map(l => { let ns: State;
@@ -46,7 +41,7 @@ function fetchStateData(backend: NodeService, state: State, nid: string): Observ
 
 export function reducer(backend: NodeService, router: Router): Reducer<State, Action> {
   return (store: Store<State, Action>, state: State, action: Action): Observable<State> => {      
-    console.log("reducer: " + action.type);
+    console.log("reducer");
     let ns: State;
 
     switch(action.type) {
@@ -179,6 +174,10 @@ export function reducer(backend: NodeService, router: Router): Reducer<State, Ac
         return backend.setFromFile(action.file).pipe(
           switchMap(b => fetchStateData(backend, state, null))
         );
+      }
+
+      case 'TEST': {
+        return of(state);
       }
 
       default: {
