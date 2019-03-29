@@ -4,7 +4,8 @@ import { Subject, Observable } from 'rxjs';
 import { NodeItem } from '../model/nodeitem';
 import { NodeService } from '../service/node.service';
 import { Store } from '../state/store';
-import { State, Action } from '../state/reducer';
+import { Action } from '../state/reducer';
+import { State } from '../model/state';
 
 @Component({
   selector: 'app-modal-add-node',
@@ -13,11 +14,14 @@ import { State, Action } from '../state/reducer';
 })
 export class ModalAddNodeComponent implements OnInit {
 
-  sourceNode: NodeItem;   // is set by initialState in ModalOptions see: MygraphComponent.showAddLinkNode() 
-  public onClose: Subject<boolean>;
+  // for use in html-template
+  public sourceNode: NodeItem;   // is set by initialState in ModalOptions see: Parent MygraphComponent.showAddLinkNode() 
   private targetNodeName: string;
   private targetNodeId: string;
   private dataValid: boolean;
+
+  // der Parent des Modal-Dialog könnte sich hier einschreiben falls es wissen muss dass der Dialog geschlossen wurde
+  public onClose: Subject<boolean>;     // this.modalRef.content.onClose.subscribe(...)
 
   constructor(private bsModalRef: BsModalRef, private store: Store<State,Action>, private nodeService: NodeService) { 
   }

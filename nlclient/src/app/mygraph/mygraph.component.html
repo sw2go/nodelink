@@ -1,45 +1,36 @@
 <div class="container-fluid " (click)="hideContextMenu()" oncontextmenu="return false;">
-  <div *ngIf="contextmenudata!=null">
-    <app-context-menu [context]="contextmenudata" ></app-context-menu>
-  </div>
-  
-
+  <app-context-menu [context]="contextmenudata"></app-context-menu>
   <div class="row">
-
-    <div class="col-9 card" (contextmenu)="showContextMenu(null, $event.clientX, $event.clientY)">
-      <div  style="height: calc( 100vh - 68px)"  >
+    <div class="col-9 card" (contextmenu)="showContextMenu(null, $event.clientX, $event.clientY)" (click)="selectionChanged(null)">
+      <div style="height: calc( 100vh - 68px)"  >
         <ngx-graph class="chart-container"
-          [layout]="layout"
-          [nodes]="nodeitems"
-          [links]="linkitems"                    
+          
+                   
           [draggingEnabled]="true"
           [autoCenter]="false"
           (activate)="onClick($event)"            
-          [legend]="false">
-            
-          <!--
-              [view]="[800, 800]" bewusst nicht festgelegt -> füllt das umgebende div
-            (select)="onClick($event)"
-          
-            (deactivate)="onClick($event)"
-            
-          
+          [legend]="false">            
+          <!-- [view]="[800, 800]" bewusst nicht festgelegt -> füllt das umgebende div
+            (select)="onClick($event)"          
+            (deactivate)="onClick($event)"  
+            [nodes]="nodeitems"
+            [links]="linkitems"  
+            [layout]="layout"                 
           -->
           <ng-template #defsTemplate>
             <svg:marker id="arrow" viewBox="0 -5 10 10" refX="8" refY="0" markerWidth="4" markerHeight="4" orient="auto">
               <svg:path d="M0,-5L10,0L0,5" class="arrow-head" />
             </svg:marker>
           </ng-template>
-          
-          
+                    
           <ng-template #nodeTemplate let-node>
-            <svg:g class="node" (contextmenu)="showContextMenu(node, $event.clientX, $event.clientY)" (click)="selectionChanged(node.id, 'ctx1')">
+            <svg:g class="node" (contextmenu)="showContextMenu(node, $event.clientX, $event.clientY)"  (click)="selectionChanged(node.id); $event.stopPropagation();">
               <svg:rect
                 [attr.width]="node.dimension.width"
                 [attr.height]="node.dimension.height"
                 [attr.fill]="node.data.color"
                 [attr.stroke]="'black'"
-                [attr.stroke-width]="(selectedGraphId == node.id) ? '3' : '0'"  
+                [attr.stroke-width]="(selectedId() == node.id) ? '3' : '0'"  
               />
               <svg:text alignment-baseline="central" [attr.x]="10" [attr.y]="node.dimension.height / 2">
                 {{node.label}}
@@ -48,27 +39,25 @@
           </ng-template>
 
           <ng-template #linkTemplate let-link>              
-            <svg:g class="edge" (contextmenu)="showContextMenu(link, $event.clientX, $event.clientY)" (click)="selectionChanged(link.id, 'ctx2')"  >
+            <svg:g class="edge" (contextmenu)="showContextMenu(link, $event.clientX, $event.clientY)" (click)="selectionChanged(link.id); $event.stopPropagation();">
               <svg:path 
                 class="line" 
-                [attr.stroke-width]="(selectedGraphId == link.id) ? '3' : '2'" 
+                [attr.stroke-width]="(selectedId() == link.id) ? '3' : '2'" 
                 marker-end="url(#arrow)">
               </svg:path>
               <svg:text 
                 class="edge-label" 
                 text-anchor="middle">
+                <!-- [attr.href]="url + '#' + link.id" für Mozilla     -->
                 <textPath
-                  class="text-path"                      
-                  [attr.href]="'#' + link.id"
+                  class="text-path"                                        
+                  [attr.href]="url + '#' + link.id"
                   [style.dominant-baseline]="link.dominantBaseline"
                   startOffset="50%">
                   {{link.label}}
-                </textPath> 
-                                                       
-              </svg:text>
-              
-            </svg:g>
-           
+                </textPath>                                                        
+              </svg:text>              
+            </svg:g>           
           </ng-template>         
         </ngx-graph>
       </div>
@@ -85,12 +74,12 @@
             <label class="btn btn-primary mb-0" style="cursor: pointer;" for="file_upload">Load</label>  
             <input class="d-none" type="file" id="file_upload" #fileload (change)="loadGraphFromFile(fileload.files[0])" />
 
-            <a class="btn btn-primary float-right ml-3" href="" download="graf.json" (click)="saveGraphToFile($event.target)">Save</a>            
+            <a class="btn btn-primary float-right ml-3" href="" download="nodelink.json" (click)="saveGraphToFile($event.target)">Save</a>            
         </div>          
       </div>
-      <router-outlet></router-outlet>
+      <app-link *ngIf="isLink(selectedItem)"></app-link>
+      <app-mynode *ngIf="isNode(selectedItem)"></app-mynode>
     </div>   
-
   </div>           <!-- row -->
 </div>
 

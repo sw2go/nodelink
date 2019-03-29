@@ -76,6 +76,13 @@ Hack Solution in graph.component.ts!
      oldLink.label = edge.label;   // maybe add others if they need to be displayed in graph
    }
 
+Fix 3: svg href in textPath works in Chrome but fails in Firefox
+----------------------------------------------------------------
+- [attr.href]="'#' + link.id" 
+- Sample: with url="/"    the href='#L33' works in Chrome and Firefox
+          with url="xyz"  the href='#L33' works in Chrome but fails in Firefox
+
+
 
 General Tips:
 Check Source-Code of graph.component.ts and other classes in the projects folder.

@@ -9,15 +9,7 @@ import { EasygraphComponent } from './easygraph/easygraph.component';
 const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'nodes' },
   { path: 'eg', component: EasygraphComponent },
-  { path: 'nodes', component: MygraphComponent,
-    children: [
-      { path: "ctx1", component: MynodeComponent },
-      { path: "ctx2", component: LinkComponent }
-    ]
-  },
-  {
-    path: 'nodesx', component: MygraphComponent
-  }
+  { path: 'nodes', component: MygraphComponent}
 ];
 
 @NgModule({

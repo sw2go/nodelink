@@ -1,12 +1,14 @@
-<div *ngIf="node$ | async as node" class="card mt-2">
-  <div class="card-body">
-    <h5 class="card-title">Node Context</h5>  
+<div *ngIf="item$ | async as item" class="card mt-2">
+  <div *ngIf="true; let _disable"  class="card-body">  <!-- ngIf just to define and set the variable -->
+    <h5 class="card-title">Node        
+      <button [disabled]="_disable" class="btn btn-primary float-right mb-3" (click)="updateItem(item.id, itemLabel.value)">Update</button>
+      <button class="btn btn-primary float-right mb-3 mr-3" >Edit</button>
+    </h5>  
     <div class="input-group">
       <div class="input-group-prepend">
         <span class="input-group-text" id="basic-addon1">Name</span>
-      </div>
-      <input #nodeLabel class="form-control" [value]="node.label" (keyup)="0" >                    
-    </div>
-    <button [disabled]="nodeLabel.value==node.label" class="btn btn-primary float-right mt-3" (click)="updateNode(node.id, nodeLabel.value)">Update</button> 
+      </div>           
+      <input #itemLabel class="form-control" [value]="item.label" (keyup)="_disable = item.label == $event.target.value" >
+    </div>    
   </div>
 </div>

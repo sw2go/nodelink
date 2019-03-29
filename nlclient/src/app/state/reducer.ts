@@ -5,18 +5,9 @@ import { NodeService } from '../service/node.service';
 import { RouterStateSnapshot, Router } from '@angular/router';
 import { NodeItem } from '../model/nodeitem';
 import { LinkItem } from '../model/linkitem';
+import { Item } from '../model/item';
+import { State } from '../model/state';
 
-
-// State
-export type State = {
-  nodes: { [id: string]: NodeItem},
-  nlist: string[],
-  links: { [id: string]: LinkItem},
-  llist: string[],
-  nid: string
-};
-
-export const initState: State = { nodes: {}, nlist: [],  links: {}, llist: [], nid: null };
 
 // Actions
 export type RouterNavigation = { type: 'ROUTER_NAVIGATION', state: RouterStateSnapshot };
@@ -29,6 +20,7 @@ export type DeleteLink = { type: 'DELETELINK', linkId: string };
 export type UpdateNode = { type: 'UPDATENODE', nodeId: string, name: string };
 export type UpdateLink = { type: 'UPDATELINK', linkId: string, name: string };
 export type ReadFromFile = { type: 'READFROMFILE', file: File };
+export type ChangeSelection = { type: 'CHANGESELECTION', id: string};
 
 
 export type Rate = { type: 'RATE', talkId: number, rating: number };
@@ -36,64 +28,74 @@ export type Unrate = { type: 'UNRATE', talkId: number, error: any };
 
 export type Action = RouterNavigation | UpdateSortOrder | DeleteLink |
  DeleteNode | AddNode | AddLink | AddLinkAndNode | UpdateNode | UpdateLink | Rate | Unrate |
- ReadFromFile;
+ ReadFromFile | ChangeSelection;
 
 
-export function isAction<T extends Action>(action: Action): action is T {
-  if ((action as T).type)
-    return true;
-  else 
-    return false;
-}
 
+
+ 
 function fetchStateData(backend: NodeService, state: State, nid: string): Observable<State> {
   return backend.getNodes().pipe(
-    switchMap(n => backend.getLinks().pipe(map(l => ({...state, nodes: n.nodes, nlist: n.nlist, links: l.links, llist: l.llist, nid: nid }))))
+    switchMap(n => backend.getLinks().pipe(map(l => { let ns: State;
+      return ns={...state, nodes: n.nodes, nlist: n.nlist, links: l.links, llist: l.llist, selectedId: nid };
+    })))
   );
 }
 
+// Important: when using spread-operator {... }, assign to ns to ensure State typechecking, ie. return ns={...state, } 
+
 export function reducer(backend: NodeService, router: Router): Reducer<State, Action> {
-    return (store: Store<State, Action>, state: State, action: Action): Observable<State> => {      
-      console.log("reducer: " + action.type);
-      if (action.type == 'ROUTER_NAVIGATION') {
+  return (store: Store<State, Action>, state: State, action: Action): Observable<State> => {      
+    console.log("reducer: " + action.type);
+    let ns: State;
+
+    switch(action.type) {
+    
+      case 'ROUTER_NAVIGATION': {
         const route = action.state.root.firstChild.firstChild; 
         const qp = action.state.root.queryParams;
         //console.log("reducer: ROUTER_NAVIGATION(" + route.routeConfig.path + ")");
         if (route.routeConfig.path === "eg") {
           return of(state);
         }
-        else if (route.routeConfig.path === "nodes" || route.routeConfig.path === "nodesx") {
+        else if (route.routeConfig.path === "nodes") {
           
           let nid: string = qp.selected;
 
           return fetchStateData(backend, state, nid);
         }
-        else if (route.routeConfig.path === "nodes/ctx1" || route.routeConfig.path === "nodes/ctx2"         ) {
-          return of(state);
-        }
+        return of(state);        
       }
-      else if (action.type == 'UPDATESORTORDER') {
+              
+      case 'CHANGESELECTION': {
+        return of(ns={...state, selectedId: action.id});
+      }
+
+      case 'UPDATESORTORDER': {
         return backend.updateSortOrder(action.nodeIds, action.linkIds).pipe(
-          map(b => ({...state, nlist: action.nodeIds, llist: action.linkIds }) )
+          map(b => ns={...state, nlist: action.nodeIds, llist: action.linkIds })
         );
       }
-      else if(action.type == "UPDATENODE") {
+
+      case 'UPDATENODE': {
         return backend.updateNode(action.nodeId, action.name).pipe(
           map(n => {
             let upd = {...state.nodes };
             upd[action.nodeId] = n;
-            return ({...state, nodes: upd});
-        }));      
+            return ns={...state, nodes: upd};
+        })); 
       }
-      else if(action.type == "UPDATELINK") {
+
+      case 'UPDATELINK': {
         return backend.updateLink(action.linkId, action.name).pipe(
           map(l => {
             let upd = {...state.links };
             upd[action.linkId] = l;
-            return ({...state, links: upd});
-        }));      
+            return ns={...state, links: upd};
+        })); 
       }
-      else if (action.type == "DELETELINK") {
+
+      case 'DELETELINK': {
         let upd1 = [...state.llist ];
         let upd2 = {...state.links };
         let lix = upd1.findIndex(l => l == action.linkId);
@@ -102,10 +104,11 @@ export function reducer(backend: NodeService, router: Router): Reducer<State, Ac
           delete upd2[action.linkId];
         }
         return backend.deleteLink(action.linkId).pipe(
-          map((b) => ({...state, llist: upd1, links: upd2 }))
+          map((b) => ns={...state, llist: upd1, links: upd2, selectedId: null })
         );
       }
-      else if (action.type == "DELETENODE") {
+
+      case 'DELETENODE': {
         return backend.deleteNode(action.nodeId).pipe(
           map((deleted) => {
             let llist = [...state.llist ];
@@ -124,38 +127,36 @@ export function reducer(backend: NodeService, router: Router): Reducer<State, Ac
                 }                
               });
             }
-            return ({ ...state, nodes: nodes, nlist: nlist, links: links, llist: llist})
-          }),
-          tap( x => {
-            console.log("before navigate nodesx");
-            router.navigate(['nodesx'], {queryParams: { selected: null }, queryParamsHandling: 'merge'});
-            console.log("after navigate nodesx");
+            return ns={ ...state, nodes: nodes, nlist: nlist, links: links, llist: llist, selectedId: null};
           })
         );
       }
-      else if (action.type == "ADDNODE") {
+
+      case 'ADDNODE': {
         return backend.addNode(action.targetNodeName).pipe(
           map((node) => {
             let nodes = {...state.nodes};
             let nlist = [...state.nlist];
             nodes[node.id] = node;  // add node to the nodes object
             nlist.push(node.id);    // add nodeid to the nodes list
-            return ({ ...state, nodes: nodes, nlist: nlist})    
+            return ns={ ...state, nodes: nodes, nlist: nlist};   
           })
         );
       }
-      else if (action.type == "ADDLINK") {
+
+      case 'ADDLINK': {
         return backend.addLink(action.sourceNodeId, action.targetNodeId).pipe(
           map((link) => {
             let links = {...state.links};
             let llist = [...state.llist];
             links[link.id] = link;  // add link to the links object
             llist.push(link.id);    // add linkid to the links list
-            return ({ ...state, links: links, llist: llist})    
+            return ns={ ...state, links: links, llist: llist};   
           })
         );
       }
-      else if (action.type == "ADDLINKANDNODE") {
+
+      case 'ADDLINKANDNODE': {
         return backend.addLinkAndNode(action.sourceNodeId, action.targetNodeName).pipe(
           map((data) => {
             let llist = [...state.llist ];
@@ -169,17 +170,22 @@ export function reducer(backend: NodeService, router: Router): Reducer<State, Ac
               links[data.link.id] = data.link;
               llist.push(data.link.id);
             }
-            return ({ ...state, nodes: nodes, nlist: nlist, links: links, llist: llist});
+            return ns={ ...state, nodes: nodes, nlist: nlist, links: links, llist: llist};
           })
         );
       }
-      else if (action.type == "READFROMFILE") {
+
+      case 'READFROMFILE': {
         return backend.setFromFile(action.file).pipe(
           switchMap(b => fetchStateData(backend, state, null))
         );
       }
-      else {
+
+      default: {
         return of(state);
       }
     }
+
   }
+}
+

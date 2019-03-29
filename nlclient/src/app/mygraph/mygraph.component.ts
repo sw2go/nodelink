@@ -5,19 +5,19 @@ import { LayoutService } from '@swimlane/ngx-graph/lib/graph/layouts/layout.serv
 import { GraphComponent  } from '@swimlane/ngx-graph/lib/graph/graph.component'
 import { Layout } from '@swimlane/ngx-graph/lib/models';
 import { DagreSettings, Orientation } from '@swimlane/ngx-graph/lib/graph/layouts/dagre';
-
-import { Observable, Subscription} from 'rxjs';
-
+import { Subscription} from 'rxjs';
 import { NodeService } from '../service/node.service';
 
 import { BsModalRef, BsModalService, ModalOptions } from 'ngx-bootstrap/modal';
 import { ModalAddNodeComponent } from '../modal-add-node/modal-add-node.component';
-import { CtxType, ContextMenuData } from '../model/contextmenudata';
-import { Item } from '../model/item';
+import { Item, ItemType } from '../model/item';
 import { Store } from '../state/store';
-import { Action, State } from '../state/reducer';
+import { Action} from '../state/reducer';
 import { Router, ActivatedRoute } from '@angular/router';
 import { sortGraphItems } from './graphsortpolicy';
+import { ContextMenuComponent } from '../context-menu/context-menu.component';
+import { State } from '../model/state';
+import { ChangeAnalyzer } from '../state/changeanalyzer';
 
 
 @Component({
@@ -27,48 +27,62 @@ import { sortGraphItems } from './graphsortpolicy';
 })
 export class MygraphComponent implements OnInit, OnDestroy, AfterViewInit {
 
-  storesub: Subscription;
-  store$: Observable<State>;
-
+  statesub: Subscription;
   modalRef: BsModalRef;
+  
+  selectedItem: Item = null;
 
-  selectedGraphId: string;
-
+  @ViewChild(ContextMenuComponent)
+  contextmenu: ContextMenuComponent;
+  
   @ViewChild(GraphComponent) 
   graph: GraphComponent;
 
-  layout: Layout;
-  nodeitems: NodeItem[] = [];
-  linkitems: LinkItem[] = [];
+  url: string;    // path only ( without param and fragment for firefox svg-problems )
 
   constructor(private activatedRoute: ActivatedRoute, private router: Router, private layoutservice: LayoutService, private nodeservice: NodeService, private modalservice: BsModalService, private store: Store<State, Action>) { 
-    this.layout = layoutservice.getLayout("dagre"); // "dagreCluster" , "dagreNodesOnly", "d3ForceDirected",  "colaForceDirected"  
-    let dagreLayoutSettings: DagreSettings = this.layout.settings;
-    dagreLayoutSettings.orientation = Orientation.TOP_TO_BOTTOM;
-    this.store$ = store.select();
+    this.url = /[^#?]+/.exec(this.router.url)[0]; 
+    console.log(">>> " +  this.url);
   }
 
   ngOnInit() {
     // subscribe to query-parameter "selected", used to update the display-style of the selected node in graph
-    this.activatedRoute.queryParams.subscribe(qp => {
-      this.selectedGraphId = (this.store.state.nlist.some(n => n == qp.selected ) || this.store.state.llist.some(l => l == qp.selected )) ? qp.selected : null;
+    this.activatedRoute.queryParams.subscribe(qp => {    
       console.log("after new query parameter");
     });
-      
-    // subscribe to store, used to redraw graph after any state changes
-    this.storesub = this.store.select().subscribe( state => {
-      this.linkitems = state.llist.map(l => state.links[l]);
-      this.nodeitems = state.nlist.map(n => state.nodes[n]);
-      this.graph.update();
-      console.log("after redraw");
+
+    let layout: Layout = this.layoutservice.getLayout("dagre"); // "dagreCluster" , "dagreNodesOnly", "d3ForceDirected",  "colaForceDirected"  
+    let dagreLayoutSettings: DagreSettings = layout.settings;
+    dagreLayoutSettings.orientation = Orientation.TOP_TO_BOTTOM;
+
+    this.graph.layout = layout;
+
+    this.statesub = this.store.state$.subscribe(change => {
+
+      let analyzer = new ChangeAnalyzer(change);
+      analyzer.GraphModelChanged((m) => {
+        //this.linkitems = m.links;
+        //this.nodeitems = m.nodes;
+        this.graph.links = m.links;
+        this.graph.nodes = m.nodes;
+        this.graph.update();
+      });
+
+      analyzer.ItemSelectionChanged((m) => {
+        this.selectedItem = m.item;
+      });
+    
     });
+
   }
-  selectionChanged(id: string, ctx: string) {
-    this.router.navigate(['nodes', ctx], { queryParams: { selected: id } });
+  selectionChanged(id: string) {
+    this.contextmenu.hide();
+    this.store.sendAction({type: "CHANGESELECTION", id: id});
+    //this.router.navigate(['nodes'], { queryParams: { selected: id } });
   };
 
   ngOnDestroy() {
-    this.storesub.unsubscribe();  // unsubscribe here from state if you don't use "| async" in the html-template
+    this.statesub.unsubscribe(); // unsubscribe here from state if you don't use "| async" in the html-template
   }
 
   ngAfterViewInit() {
@@ -77,27 +91,44 @@ export class MygraphComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   relayoutClicked() {
-    let sorted = sortGraphItems(this.graph.nodes,this.graph.links);
+    let sorted = sortGraphItems(this.graph.nodes, this.graph.links);
     this.store.sendAction({type: "UPDATESORTORDER", nodeIds: sorted.nodeIds, linkIds: sorted.linkIds });
+  }
+
+  public isNode(item: Item) : boolean {
+      return (item && item.type == ItemType.Node);
+  }
+
+  public isLink(item: Item) : boolean {
+      return (item && item.type == ItemType.Link);
+  }
+
+  public selectedId() : string {
+    return (this.selectedItem) ? this.selectedItem.id : null;
   }
 
 
   // Context-Menu Stuff
   // ------------------
-  contextmenudata: ContextMenuData = null;
 
   showContextMenu(item: Item, x: number, y: number) {
 
-    if (item==null && this.contextmenudata != null) // da das "contextmenu" event hochpropagiert wird nach dem Node-Klick auch noch ein Panel-Klick ausgelöst 
-      return;                                       // deshalb -> wenn Menü bereits offen -> Abbruch
+    if (this.contextmenu.x == x && this.contextmenu.y)  // da das "contextmenu" event hochpropagiert, wird nach dem Node-Klick auch noch ein Panel-Klick ausgelöst 
+      return;                                           // deshalb -> wenn Menü an dieser Position bereits offen -> Abbruch, 
+                                                        // $event.stopPropagation() ist keine Lösung denn nach Panel-Click kommt noch: oncontextmenu="return false;" 
 
-    let type: CtxType = (item == null) ? CtxType.Panel : ((item instanceof NodeItem) ? CtxType.Node : CtxType.Link );
-    let id: string = (item) ? item.id : null;
-    this.contextmenudata = new ContextMenuData(type, id, x, y);
-    this.contextmenudata.addNode = () => { this.showAddLinkNode(item as NodeItem) };
-    this.contextmenudata.addLink = () => { this.showAddLinkNode(item as NodeItem) };
-    this.contextmenudata.delNode = () => { this.deleteNode(item as NodeItem) };
-    this.contextmenudata.delLink = () => { this.deleteLink(item as LinkItem) };
+    this.store.sendAction({type: "CHANGESELECTION", id: (item) ? item.id : null})
+                                                      
+    this.contextmenu.show( x,y, [
+      { text: "Add Node",      show: item == null     , call: () => this.showAddLinkNode(item as NodeItem) },
+      { text: "Add Link/Node", show: this.isNode(item), call: () => this.showAddLinkNode(item as NodeItem) },  
+      { text: "Remove Node",   show: this.isNode(item), call: () => this.deleteNode(item as NodeItem) },
+      { text: "Remove Link",   show: this.isLink(item), call: () => this.deleteLink(item as LinkItem) }  
+    ]);
+  }
+
+  hideContextMenu(){
+    this.contextmenu.hide();
   }
 
   showAddLinkNode(sourceNode: NodeItem) {
@@ -112,10 +143,6 @@ export class MygraphComponent implements OnInit, OnDestroy, AfterViewInit {
 
   deleteLink(link: LinkItem) {  
     this.store.sendAction({ type: "DELETELINK" , linkId: link.id });
-  }
-
-  hideContextMenu(){
-    this.contextmenudata = null;
   }
 
   saveGraphToFile(aElementRef: any) {

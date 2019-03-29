@@ -1,16 +1,21 @@
 import { Injectable } from '@angular/core';
-import { Subject, Observer, Observable, asyncScheduler, of, throwError, BehaviorSubject } from 'rxjs';
-import { observeOn, mergeMap, map, switchMap, catchError, tap } from 'rxjs/operators';
+import { Subject, Observer, Observable, asyncScheduler, of, BehaviorSubject } from 'rxjs';
+import { observeOn, mergeMap, map, startWith, pairwise } from 'rxjs/operators';
+import { State } from '../model/state';
 
 export type RollbackFunction<S, A> = (currentState: S, oldState: S, action: A) => S;
 export type Reducer<S, A> = (store: Store<S,A>, state: S, action: A) => Observable<S>;
+export type StateChange<S> = { actual: S, last: S };
 
 @Injectable()
 export class Store<S, A> {
   private actions = new Subject<{action: A, result: Observer<boolean>}>();
-  private state$ = new BehaviorSubject<S>(null);
+  private stateSubject = new BehaviorSubject<S>(null);
+  private initState: S;
 
   constructor(private reducer: Reducer<S, A>, public state: S) {  
+    
+    this.initState = state;
 
     this.actions.pipe(observeOn(asyncScheduler), mergeMap(a => {
       let obs: Observable<S>;
@@ -31,7 +36,7 @@ export class Store<S, A> {
       this.state = pair.state;
       console.log(this.state);
 
-      this.state$.next(this.state);
+      this.stateSubject.next(this.state);
 
       if (pair.err)
         pair.result.error(pair.err);
@@ -50,7 +55,10 @@ export class Store<S, A> {
     return res;
   }
 
-  select(): Observable<S> {
-    return this.state$;
-  }
+  get state$(): Observable<StateChange<S>> {
+    return this.stateSubject.pipe(
+      startWith(this.initState),
+      pairwise(),
+      map(pair => { return { actual: pair[1], last: pair[0]}; })
+  )}
 }

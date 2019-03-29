@@ -1,6 +1,6 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule  } from '@angular/platform-browser/animations';
-import { NgModule } from '@angular/core';
+import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { NgxGraphModule } from '@swimlane/ngx-graph';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -13,12 +13,13 @@ import { NodeService } from './service/node.service';
 import { ModalAddNodeComponent } from './modal-add-node/modal-add-node.component';
 import { ContextMenuComponent } from './context-menu/context-menu.component';
 import { Store } from './state/store';
-import { reducer, initState } from './state/reducer';
+import { reducer } from './state/reducer';
 import { StoreAndRouterConnector } from './state/storeandrouterconnector';
 import { MynodeComponent } from './mynode/mynode.component';
 import { Router } from '@angular/router';
 import { LinkComponent } from './link/link.component';
 import { EasygraphComponent } from './easygraph/easygraph.component';
+import { initState } from './model/state';
 
 
 
@@ -35,7 +36,7 @@ import { EasygraphComponent } from './easygraph/easygraph.component';
   entryComponents: [
     ModalAddNodeComponent
   ],
-  // schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
