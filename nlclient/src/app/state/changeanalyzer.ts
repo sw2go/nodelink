@@ -3,6 +3,7 @@ import { State } from '../model/state';
 import { Item } from '../model/item';
 import { LinkItem } from '../model/linkitem';
 import { NodeItem } from '../model/nodeitem';
+import { GraphSettings } from '../model/graphsettings';
 
 export class ChangeAnalyzer {
 
@@ -31,6 +32,32 @@ export class ChangeAnalyzer {
         return { item: item };    
     }
 
+    public static ItemUpdated(state: StateChange<State>): { item: Item } {
+
+        if (state.actual.selectedId != state.last.selectedId )
+            return null;
+        
+        let actual: Item = state.actual.links[state.actual.selectedId];
+        if (!actual)
+            actual = state.actual.nodes[state.actual.selectedId];
+
+        let last: Item = state.last.links[state.last.selectedId];
+        if (!last)
+            last = state.last.nodes[state.last.selectedId];
+
+        if (actual == null || actual == last)
+            return;
+
+        return { item: actual };    
+    }
+
+    public static GraphSettingsChanged(state: StateChange<State>): { settings: GraphSettings } {
+        if (state.actual.settings === state.last.settings)
+            return null;
+
+        return { settings: state.actual.settings }
+    }
+
     public static GraphModelChanged(state: StateChange<State>): { links: LinkItem[], nodes: NodeItem[] } {
 
         if (state.actual.nodes === state.last.nodes            
@@ -49,6 +76,10 @@ export class ChangeAnalyzer {
 
     public ItemSelectionChanged(action: (model: { item: Item }) => void) {
         ChangeAnalyzer.GenericChanged(ChangeAnalyzer.ItemSelectionChanged, action, this.state);
+    }
+
+    public GraphSettingsChanged(action: (model: { settings: GraphSettings }) => void) {
+        ChangeAnalyzer.GenericChanged(ChangeAnalyzer.GraphSettingsChanged, action, this.state);
     }
 
     public GraphModelChanged(action: (model: { links: LinkItem[], nodes: NodeItem[] }) => void) {

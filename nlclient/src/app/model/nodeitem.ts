@@ -5,7 +5,8 @@ export class NodeItem implements Item {
     public type: number;
     public constructor(
         public id: string,
-        public label: string
+        public label: string,
+        public description: string
     ){
         this.type = ItemType.Node;
     };

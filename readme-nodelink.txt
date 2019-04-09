@@ -82,6 +82,12 @@ Fix 3: svg href in textPath works in Chrome but fails in Firefox
 - Sample: with url="/"    the href='#L33' works in Chrome and Firefox
           with url="xyz"  the href='#L33' works in Chrome but fails in Firefox
 
+Fix 4: Exception when before Destroying compoment
+-------------------------------------------------
+-> in graph.component.ts 
+-> fix in applyNodeDimensions() to avoid null-ref exceptions
+   find "const node = this.graph.nodes.find(n => n.id === nativeElement.id);"
+   add  "if (!node) return;"
 
 
 General Tips:

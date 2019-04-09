@@ -1,31 +1,30 @@
 import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild } from '@angular/core';
-import { NodeItem } from './../model/nodeitem';
-import { LinkItem } from './../model/linkitem';
+import { NodeItem } from './../../model/nodeitem';
+import { LinkItem } from './../../model/linkitem';
 import { LayoutService } from '@swimlane/ngx-graph/lib/graph/layouts/layout.service';
 import { GraphComponent  } from '@swimlane/ngx-graph/lib/graph/graph.component'
 import { Layout } from '@swimlane/ngx-graph/lib/models';
 import { DagreSettings, Orientation } from '@swimlane/ngx-graph/lib/graph/layouts/dagre';
 import { Subscription} from 'rxjs';
-import { NodeService } from '../service/node.service';
+import { NodeService } from '../../service/node.service';
 
 import { BsModalRef, BsModalService, ModalOptions } from 'ngx-bootstrap/modal';
-import { ModalAddNodeComponent } from '../modal-add-node/modal-add-node.component';
-import { Item, ItemType } from '../model/item';
-import { Store } from '../state/store';
-import { Action} from '../state/reducer';
+import { ModalAddNodeComponent } from '../../modal-add-node/modal-add-node.component';
+import { Item, ItemType } from '../../model/item';
+import { Store } from '../../state/store';
+import { Action} from '../../state/reducer';
 import { Router, ActivatedRoute } from '@angular/router';
-import { sortGraphItems } from './graphsortpolicy';
-import { ContextMenuComponent } from '../context-menu/context-menu.component';
-import { State } from '../model/state';
-import { ChangeAnalyzer } from '../state/changeanalyzer';
+import { ContextMenuComponent } from '../../context-menu/context-menu.component';
+import { State } from '../../model/state';
+import { ChangeAnalyzer } from '../../state/changeanalyzer';
 
 
 @Component({
-  selector: 'app-mygraph',
-  templateUrl: './mygraph.component.html',
-  styleUrls: ['./mygraph.component.scss']
+  selector: 'app-graphview',
+  templateUrl: './graphview.component.html',
+  styleUrls: ['./graphview.component.scss']
 })
-export class MygraphComponent implements OnInit, OnDestroy, AfterViewInit {
+export class GraphviewComponent implements OnInit, OnDestroy, AfterViewInit {
 
   statesub: Subscription;
   modalRef: BsModalRef;
@@ -46,10 +45,15 @@ export class MygraphComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnInit() {
+
+    console.log("mygraph init");
+
+
     // subscribe to query-parameter "selected", used to update the display-style of the selected node in graph
     this.activatedRoute.queryParams.subscribe(qp => {    
       console.log("after new query parameter");
     });
+
 
     let layout: Layout = this.layoutservice.getLayout("dagre"); // "dagreCluster" , "dagreNodesOnly", "d3ForceDirected",  "colaForceDirected"  
     let dagreLayoutSettings: DagreSettings = layout.settings;
@@ -60,12 +64,11 @@ export class MygraphComponent implements OnInit, OnDestroy, AfterViewInit {
     this.statesub = this.store.state$.subscribe(change => {
 
       let analyzer = new ChangeAnalyzer(change);
-      analyzer.GraphModelChanged((m) => {
-        //this.linkitems = m.links;
-        //this.nodeitems = m.nodes;
+      analyzer.GraphModelChanged((m) => {        
         this.graph.links = m.links;
         this.graph.nodes = m.nodes;
-        this.graph.update();
+        console.log("mygraph before update");
+        this.graph.update();    
       });
 
       analyzer.ItemSelectionChanged((m) => {
@@ -78,21 +81,16 @@ export class MygraphComponent implements OnInit, OnDestroy, AfterViewInit {
   selectionChanged(id: string) {
     this.contextmenu.hide();
     this.store.sendAction({type: "CHANGESELECTION", id: id});
-    //this.router.navigate(['nodes'], { queryParams: { selected: id } });
+    //this.router.navigate(['nodes'], { queryParams: { selected: id } }); keine Option da Firefox Probleme macht (svg)
   };
 
   ngOnDestroy() {
+    console.log("mygraph destroy");
     this.statesub.unsubscribe(); // unsubscribe here from state if you don't use "| async" in the html-template
   }
 
   ngAfterViewInit() {
     // subscribe to "graph.select", used to update the url with a "selected" query-parameter
-
-  }
-
-  relayoutClicked() {
-    let sorted = sortGraphItems(this.graph.nodes, this.graph.links);
-    this.store.sendAction({type: "UPDATESORTORDER", nodeIds: sorted.nodeIds, linkIds: sorted.linkIds });
   }
 
   public isNode(item: Item) : boolean {
@@ -120,6 +118,7 @@ export class MygraphComponent implements OnInit, OnDestroy, AfterViewInit {
     this.store.sendAction({type: "CHANGESELECTION", id: (item) ? item.id : null})
                                                       
     this.contextmenu.show( x,y, [
+      { text: "Edit Node",     show: this.isNode(item), call: () => this.editNode(item.id) },  
       { text: "Add Node",      show: item == null     , call: () => this.showAddLinkNode(item as NodeItem) },
       { text: "Add Link/Node", show: this.isNode(item), call: () => this.showAddLinkNode(item as NodeItem) },  
       { text: "Remove Node",   show: this.isNode(item), call: () => this.deleteNode(item as NodeItem) },
@@ -132,9 +131,7 @@ export class MygraphComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   showAddLinkNode(sourceNode: NodeItem) {
-    let config: ModalOptions = { initialState: { sourceNode: sourceNode } };
-    this.modalRef = this.modalservice.show(ModalAddNodeComponent, config);
-    this.modalRef.content.onClose.subscribe(result => { /*falls mal nötig*/ } );
+    this.store.sendAction({type: "ADDMODAL", item: sourceNode});
   }
 
   deleteNode(node: NodeItem) {    
@@ -145,11 +142,8 @@ export class MygraphComponent implements OnInit, OnDestroy, AfterViewInit {
     this.store.sendAction({ type: "DELETELINK" , linkId: link.id });
   }
 
-  saveGraphToFile(aElementRef: any) {
-    aElementRef.href = this.nodeservice.hrefGraphData();
+  editNode(id: string) {
+    this.router.navigate(['nodes', 'edit', id])
   }
 
-  loadGraphFromFile(file: File) {
-    this.store.sendAction({ type: "READFROMFILE" , file: file });
-  }
 }

@@ -5,33 +5,37 @@ import { NgxGraphModule } from '@swimlane/ngx-graph';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { MygraphComponent } from './mygraph/mygraph.component';
+import { GraphviewComponent } from './graph/graphview/graphview.component';
 import { SortableModule } from 'ngx-bootstrap/sortable';
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
-import { ModalModule } from 'ngx-bootstrap/modal';
+import { ModalModule, BsModalService } from 'ngx-bootstrap/modal';
 import { NodeService } from './service/node.service';
 import { ModalAddNodeComponent } from './modal-add-node/modal-add-node.component';
 import { ContextMenuComponent } from './context-menu/context-menu.component';
 import { Store } from './state/store';
 import { reducer } from './state/reducer';
 import { StoreAndRouterConnector } from './state/storeandrouterconnector';
-import { MynodeComponent } from './mynode/mynode.component';
 import { Router } from '@angular/router';
-import { LinkComponent } from './link/link.component';
+import { LinkContextComponent } from './graph/linkcontext/linkcontext.component';
 import { EasygraphComponent } from './easygraph/easygraph.component';
 import { initState } from './model/state';
+import { NodeContextComponent } from './graph/nodecontext/nodecontext.component';
+import { NodeDetailsComponent } from './node-details/node-details.component';
+import { GraphContextComponent } from './graph/graphcontext/graphcontext.component';
 
 
 
 @NgModule({
   declarations: [
     AppComponent,
-    MygraphComponent,
+    GraphviewComponent,
     ModalAddNodeComponent,
     ContextMenuComponent,
-    MynodeComponent,
-    LinkComponent,
-    EasygraphComponent
+    LinkContextComponent,
+    EasygraphComponent,
+    NodeContextComponent,
+    NodeDetailsComponent,
+    GraphContextComponent
   ],
   entryComponents: [
     ModalAddNodeComponent
@@ -48,7 +52,7 @@ import { initState } from './model/state';
   ],
   providers: [
     NodeService,
-    { provide: Store, useFactory: (nservice, router) => new Store(reducer(nservice, router), initState), deps: [NodeService, Router] },
+    { provide: Store, useFactory: (nservice, modal, router) => new Store(reducer(nservice, modal, router), initState), deps: [NodeService, BsModalService, Router] },
     StoreAndRouterConnector
   ],
   bootstrap: [AppComponent]

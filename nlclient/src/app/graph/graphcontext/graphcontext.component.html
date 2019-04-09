@@ -1,0 +1,35 @@
+<div *ngIf="item$ | async as item" class="card mt-2">
+  <div class="card-body ">
+    <div class="d-flex align-items-center"> <!--  damit die 2 inneren div's horizontal mittig ausgerichtet werden -->
+      <div>
+        <span class="h5 v-align">Graph</span>
+      </div>    
+      <div class="btn-group ml-auto" dropdown> <!-- ngx-dropdown -->
+        <button  class="btn btn-primary" (click)="relayoutClicked()">Relayout</button>
+        <button id="button-split" type="button" dropdownToggle class="btn btn-primary dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-split">
+          <span class="caret"></span>
+          <span class="sr-only">Split button!</span>
+        </button>
+        <ul id="dropdown-split" *dropdownMenu class="dropdown-menu dropdown-menu-right"
+            role="menu" aria-labelledby="button-split">
+          <li role="menuitem"><a class="dropdown-item" (click)="relayoutClicked()">Relayout</a></li>        
+          <li role="menuitem">
+              <a class="dropdown-item" href="" download="{{item.name}}.json" (click)="saveGraphToFile($event.target)">Save to file</a>
+          </li>
+          <li role="menuitem">  <!--  <span class="dropdown-item" > -->
+              <label class="dropdown-item" style="cursor: pointer;" for="file_upload">Load from file</label>
+              <input class="d-none" type="file" id="file_upload" #fileload (change)="loadGraphFromFile(fileload.files[0])" />              
+          </li>
+          <li class="divider dropdown-divider"></li>
+          <li role="menuitem"><a class="dropdown-item" (click)="addNode()">Add Node</a></li>          
+        </ul>
+      </div>   
+    </div>
+    <div class="input-group mt-3">
+        <div class="input-group-prepend">
+          <span class="input-group-text" id="basic-addon1">Name</span>
+        </div>           
+        <input #itemLabel class="form-control" [value]="item.name" (keyup)="changeName($event.target.value)" placeholder="Use a-Z only" required pattern="[A-Za-z]+" >
+      </div> 
+  </div>  
+</div>

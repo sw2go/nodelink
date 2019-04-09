@@ -1,20 +1,20 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { MynodeComponent } from './mynode.component';
+import { LinkContextComponent } from './linkcontext.component';
 
-describe('MynodeComponent', () => {
-  let component: MynodeComponent;
-  let fixture: ComponentFixture<MynodeComponent>;
+describe('LinkComponent', () => {
+  let component: LinkContextComponent;
+  let fixture: ComponentFixture<LinkContextComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ MynodeComponent ]
+      declarations: [ LinkContextComponent ]
     })
     .compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(MynodeComponent);
+    fixture = TestBed.createComponent(LinkContextComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

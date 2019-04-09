@@ -1,0 +1,28 @@
+<div *ngIf="item$ | async as item" class="card mt-2">
+  <div *ngIf="true; let _disable"  class="card-body">  <!-- ngIf just to define and set the variable -->
+    <div class="d-flex align-items-center">
+      <div>
+        <span class="h5 v-align">Node</span>
+      </div>  
+      <div class="btn-group ml-auto" dropdown> <!-- ngx-dropdown -->
+        <a class="btn btn-primary" routerLink="/nodes/edit/{{item.id}}">Edit</a>
+        <button id="button-split" type="button" dropdownToggle class="btn btn-primary dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-split">
+          <span class="caret"></span>
+          <span class="sr-only">Split button!</span>
+        </button>
+        <ul id="dropdown-split" *dropdownMenu class="dropdown-menu dropdown-menu-right"
+            role="menu" aria-labelledby="button-split">
+          <li role="menuitem"><a    class="dropdown-item" routerLink="/nodes/edit/{{item.id}}">Edit Node</a></li>
+          <li role="menuitem"><span class="dropdown-item" (click)="addLink(item)">Add Link/Node</span></li>
+          <li role="menuitem"><span class="dropdown-item" (click)="deleteNode(item.id)">Remove Node</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="input-group mt-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text" id="basic-addon1">Name</span>
+      </div>           
+      <input #itemLabel readonly class="form-control" [value]="item.label" (keyup)="_disable = item.label == $event.target.value" >
+    </div>    
+  </div>
+</div>

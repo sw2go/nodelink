@@ -5,16 +5,17 @@
       <div style="height: calc( 100vh - 68px)"  >
         <ngx-graph class="chart-container"
           
-                   
+
           [draggingEnabled]="true"
           [autoCenter]="false"
           (activate)="onClick($event)"            
           [legend]="false">            
           <!-- [view]="[800, 800]" bewusst nicht festgelegt -> füllt das umgebende div
             (select)="onClick($event)"          
-            (deactivate)="onClick($event)"  
+            (deactivate)="onClick($event)" 
             [nodes]="nodeitems"
-            [links]="linkitems"  
+            [links]="linkitems" 
+  
             [layout]="layout"                 
           -->
           <ng-template #defsTemplate>
@@ -24,7 +25,9 @@
           </ng-template>
                     
           <ng-template #nodeTemplate let-node>
-            <svg:g class="node" (contextmenu)="showContextMenu(node, $event.clientX, $event.clientY)"  (click)="selectionChanged(node.id); $event.stopPropagation();">
+            <svg:g class="node" (contextmenu)="showContextMenu(node, $event.clientX, $event.clientY)" 
+                                (dblclick)="editNode(node.id)" 
+                                (click)="selectionChanged(node.id); $event.stopPropagation();">
               <svg:rect
                 [attr.width]="node.dimension.width"
                 [attr.height]="node.dimension.height"
@@ -64,21 +67,9 @@
     </div>
 
     <div class="col-3">
-      <div class="card">
-        <div class="card-body text-right">
-            <button type="button" class="btn btn-primary" (click)="relayoutClicked()">Relayout</button>
-        </div>          
-      </div>
-      <div class="card mt-2">
-        <div class="card-body text-right">
-            <label class="btn btn-primary mb-0" style="cursor: pointer;" for="file_upload">Load</label>  
-            <input class="d-none" type="file" id="file_upload" #fileload (change)="loadGraphFromFile(fileload.files[0])" />
-
-            <a class="btn btn-primary float-right ml-3" href="" download="nodelink.json" (click)="saveGraphToFile($event.target)">Save</a>            
-        </div>          
-      </div>
-      <app-link *ngIf="isLink(selectedItem)"></app-link>
-      <app-mynode *ngIf="isNode(selectedItem)"></app-mynode>
+      <app-graphcontext [graph]="graph.graph"></app-graphcontext>
+      <app-linkcontext *ngIf="isLink(selectedItem)"></app-linkcontext>
+      <app-nodecontext *ngIf="isNode(selectedItem)"></app-nodecontext>
     </div>   
   </div>           <!-- row -->
 </div>

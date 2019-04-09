@@ -1,19 +1,19 @@
 import { Component, OnInit } from '@angular/core';
-import { Store } from '../state/store';
-import { Action } from '../state/reducer';
-import { NodeItem } from '../model/nodeitem';
+import { Store } from '../../state/store';
+import { Action } from '../../state/reducer';
+import { NodeItem } from '../../model/nodeitem';
 import { Observable} from 'rxjs';
 import { map, filter } from 'rxjs/operators';
-import { ItemType } from '../model/item';
-import { State } from '../model/state';
-import { ChangeAnalyzer } from '../state/changeanalyzer';
+import { ItemType } from '../../model/item';
+import { State } from '../../model/state';
+import { ChangeAnalyzer } from '../../state/changeanalyzer';
 
 @Component({
-  selector: 'app-mynode',
-  templateUrl: './mynode.component.html',
-  styleUrls: ['./mynode.component.scss']
+  selector: 'app-nodecontext',
+  templateUrl: './nodecontext.component.html',
+  styleUrls: ['./nodecontext.component.scss']
 })
-export class MynodeComponent implements OnInit {
+export class NodeContextComponent implements OnInit {
 
   item$: Observable<NodeItem>;  // for use in html-template with async-pipe ( advantage: no code for unsubscribe required )
 
@@ -30,12 +30,16 @@ export class MynodeComponent implements OnInit {
   ngOnInit() {
   }
 
-  updateItem(id: string, name: string) {
-    this.store.sendAction({type: "UPDATENODE", nodeId: id, name: name});
-  }
-
   test() {
     this.store.sendAction({type: "TEST"});
+  }
+
+  addLink(item: NodeItem) {
+    this.store.sendAction({type: "ADDMODAL", item: item});
+  }
+
+  deleteNode(id: string) {
+    this.store.sendAction({type: "DELETENODE", nodeId: id});
   }
 
 }

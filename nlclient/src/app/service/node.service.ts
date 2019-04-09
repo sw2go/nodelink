@@ -3,6 +3,7 @@ import { NodeItem } from './../model/nodeitem';
 import { Observable, of, throwError } from 'rxjs';
 import { LinkItem } from '../model/linkitem';
 import { map, switchMap, tap } from 'rxjs/operators';
+import { GraphSettings } from '../model/graphsettings';
 
 @Injectable()
 export class NodeService {
@@ -10,13 +11,14 @@ export class NodeService {
   private id: number = 0;
   private nodes: NodeItem[] = [];
   private links: LinkItem[] = [];
+  private settings: GraphSettings;
 
   constructor() { 
 
-    let n1: NodeItem = new NodeItem(this.newNodeId(), "N1");
-    let n2: NodeItem = new NodeItem(this.newNodeId(), "N2");
-    let n3: NodeItem = new NodeItem(this.newNodeId(), "N3");
-    let n4: NodeItem = new NodeItem(this.newNodeId(), "N4");
+    let n1: NodeItem = new NodeItem(this.newNodeId(), "N1", null);
+    let n2: NodeItem = new NodeItem(this.newNodeId(), "N2", null);
+    let n3: NodeItem = new NodeItem(this.newNodeId(), "N3", null);
+    let n4: NodeItem = new NodeItem(this.newNodeId(), "N4", null);
 
     let l1: LinkItem = new LinkItem(this.newLinkId(),n1.id, n2.id, "L1")
     let l2: LinkItem = new LinkItem(this.newLinkId(),n1.id, n3.id, "L2")
@@ -30,6 +32,8 @@ export class NodeService {
     this.links.push(l1);
     this.links.push(l2);
     this.links.push(l3);
+
+    this.settings = { name: "nodelink" };
   }
 
   private newNodeId(): string {
@@ -42,9 +46,18 @@ export class NodeService {
     return "L" + this.id.toString();
   }
 
+  getGraphSettings(): Observable<GraphSettings> {
+    return of(this.settings);
+  }
+
+  updateGraphSettings(settings: GraphSettings): Observable<GraphSettings> {
+    this.settings = settings;
+    return of(this.settings);
+  }
+
   // liefert neuen Node
   addNode(targetNodeName: string): Observable<NodeItem> {    
-    let targetNode = new NodeItem(this.newNodeId(), targetNodeName);
+    let targetNode = new NodeItem(this.newNodeId(), targetNodeName, null);
     this.nodes.push(targetNode);
     return of(targetNode);
   }
@@ -55,7 +68,7 @@ export class NodeService {
     if (six < 0)
       throw new RangeError("sourceId " + sourceNodeId + " not found");
     
-    let targetNode = new NodeItem(this.newNodeId(), targetNodeName);
+    let targetNode = new NodeItem(this.newNodeId(), targetNodeName, null);
     this.nodes.splice(six+1, 0, targetNode);
 
     let lid = this.newLinkId();
@@ -79,12 +92,12 @@ export class NodeService {
     return of(newLink);
   }
 
-  updateNode(nodeId: string, name: string): Observable<NodeItem> {
+  updateNode(nodeId: string, name: string, desc: string ): Observable<NodeItem> {
     let nix = this.nodes.findIndex(n => n.id == nodeId);
     if (nix<0)
       throw new RangeError("nodeId " + nodeId + " not found");
     //let upd: NodeItem = {...this.nodes[nix], label: name} as NodeItem;
-    let upd: NodeItem = new NodeItem(nodeId, name); // da obige Zeile mit spread-operator immer ein "object" statt ein NodeItem liefert
+    let upd: NodeItem = new NodeItem(nodeId, name, desc); // da obige Zeile mit spread-operator immer ein "object" statt ein NodeItem liefert
     this.nodes[nix] = upd;
     if (name == "e")
       throw new Error('update failed with E!');
@@ -145,6 +158,27 @@ export class NodeService {
     return of ({links, llist});
   }
 
+  // liefert 1 node
+  getNode(id: string): Observable<{nodes: {[id: string]: NodeItem}, nlist: string[]}> {
+    const filtered = this.nodes.filter(n => n.id == id);
+    const nodes = filtered.reduce((acc, t) => (acc[t.id] = t, acc), {});
+    const nlist =  filtered.map(t => t.id);
+    return of ({nodes, nlist});
+  }
+
+  // liefert 1 link
+  getLink(id: string): Observable<{links: {[id: string]: LinkItem}, llist: string[]}> {
+    const filtered = this.links.filter(l => l.id == id);
+    const links = filtered.reduce((acc, t) => (acc[t.id] = t, acc), {});
+    const llist =  filtered.map(t => t.id);
+    return of ({links, llist});
+  }
+
+
+
+
+
+
   updateSortOrder(nodeIds: string[], linkIds: string[]): Observable<boolean> {
     this.nodes = nodeIds.map(id => this.nodes.find((n) => n.id == id ));
     this.links = linkIds.map(id => this.links.find((l) => l.id == id ));
@@ -158,7 +192,7 @@ export class NodeService {
   }
 
   hrefGraphData(): string {
-    let data = { nodes: this.nodes.map(n => new NodeItem(n.id, n.label)), links: this.links.map(l => new LinkItem(l.id, l.source, l.target, l.label)) };
+    let data = { settings: this.settings, nodes: this.nodes.map(n => new NodeItem(n.id, n.label, n.description)), links: this.links.map(l => new LinkItem(l.id, l.source, l.target, l.label)) };
     let json = JSON.stringify(data);
     let blob = new Blob([json], {type: "application/json"});
     return URL.createObjectURL(blob);
@@ -168,7 +202,8 @@ export class NodeService {
 
     return readFile(file).pipe(        
       map(str => {
-        let data: { nodes: NodeItem[], links: LinkItem[] } = JSON.parse(str);
+        let data: { settings: GraphSettings, nodes: NodeItem[], links: LinkItem[] } = JSON.parse(str);
+        this.settings = data.settings;
         this.nodes = data.nodes;
         this.links = data.links;
         return true;

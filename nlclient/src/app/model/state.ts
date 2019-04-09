@@ -1,5 +1,6 @@
 import { NodeItem } from './nodeitem';
 import { LinkItem } from './linkitem';
+import { GraphSettings } from './graphsettings';
 
 // State
 export type State = {
@@ -7,8 +8,9 @@ export type State = {
     nlist: string[],
     links: { [id: string]: LinkItem},
     llist: string[],
-    selectedId: string
+    selectedId: string,
+    settings: GraphSettings
   };
 
   
-export const initState: State = { nodes: {}, nlist: [],  links: {}, llist: [], selectedId: null };
+export const initState: State = { nodes: {}, nlist: [],  links: {}, llist: [], selectedId: null, settings: null };

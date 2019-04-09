@@ -7,39 +7,59 @@ import { NodeItem } from '../model/nodeitem';
 import { LinkItem } from '../model/linkitem';
 import { Item } from '../model/item';
 import { State } from '../model/state';
+import { BsModalService, ModalOptions } from 'ngx-bootstrap/modal';
+import { ModalAddNodeComponent } from '../modal-add-node/modal-add-node.component';
+import { GraphSettings } from '../model/graphsettings';
 
 
 // Actions
 export type RouterNavigation = { type: 'ROUTER_NAVIGATION', state: RouterStateSnapshot };
+
+export type UpdateSettingsName = { type: 'UPDATESETTINGSNAME', name: string };
 export type UpdateSortOrder = { type: 'UPDATESORTORDER', nodeIds: string[], linkIds: string[] };
 export type AddNode = { type: 'ADDNODE', targetNodeName: string };
 export type AddLink = { type: 'ADDLINK', sourceNodeId: string, targetNodeId: string };
 export type AddLinkAndNode = { type: 'ADDLINKANDNODE', sourceNodeId: string, targetNodeName: string };
 export type DeleteNode = { type: 'DELETENODE', nodeId: string };
 export type DeleteLink = { type: 'DELETELINK', linkId: string };
-export type UpdateNode = { type: 'UPDATENODE', nodeId: string, name: string };
+export type UpdateNode = { type: 'UPDATENODE', nodeId: string, name: string, description: string };
 export type UpdateLink = { type: 'UPDATELINK', linkId: string, name: string };
 export type ReadFromFile = { type: 'READFROMFILE', file: File };
 export type ChangeSelection = { type: 'CHANGESELECTION', id: string};
+export type LoadItem = { type: 'LOADITEM', id: string};
+export type LoadGraph = { type: 'LOADGRAPH'};
 export type Test = { type: 'TEST'};
+export type AddModal = { type: 'ADDMODAL', item: NodeItem};
 
 
-export type Action = RouterNavigation | UpdateSortOrder | DeleteLink |
+export type Action = RouterNavigation | UpdateSettingsName | UpdateSortOrder | DeleteLink |
  DeleteNode | AddNode | AddLink | AddLinkAndNode | UpdateNode | UpdateLink |
- ReadFromFile | ChangeSelection | Test;
+ ReadFromFile | ChangeSelection | Test | LoadItem | LoadGraph | AddModal;
 
 
-function fetchStateData(backend: NodeService, state: State, nid: string): Observable<State> {
-  return backend.getNodes().pipe(
-    switchMap(n => backend.getLinks().pipe(map(l => { let ns: State;
-      return ns={...state, nodes: n.nodes, nlist: n.nlist, links: l.links, llist: l.llist, selectedId: nid };
+function fetchGraphData(backend: NodeService, state: State): Observable<State> {
+  return backend.getNodes().pipe( 
+    switchMap(n => backend.getGraphSettings().pipe( 
+    switchMap(s => backend.getLinks().pipe(      
+      map(l => { let ns: State;        
+      return ns={...state, nodes: n.nodes, nlist: n.nlist, links: l.links, llist: l.llist, settings: s };
+    })))))
+  );
+}
+
+function fetchItemData(backend: NodeService, state: State, nid: string): Observable<State> {
+  return backend.getNode(nid).pipe(
+    switchMap(n => backend.getLink(nid).pipe(map(l => { let ns: State;      
+      let id = ((n.nlist.length + l.llist.length) > 0) ? nid: null;
+      return ns={...state, nodes: n.nodes, nlist: n.nlist, links: l.links, llist: l.llist, selectedId: id };
     })))
   );
 }
 
+
 // Important: when using spread-operator {... }, assign to ns to ensure State typechecking, ie. return ns={...state, } 
 
-export function reducer(backend: NodeService, router: Router): Reducer<State, Action> {
+export function reducer(backend: NodeService, modal: BsModalService, router: Router): Reducer<State, Action> {
   return (store: Store<State, Action>, state: State, action: Action): Observable<State> => {      
     console.log("reducer");
     let ns: State;
@@ -54,16 +74,37 @@ export function reducer(backend: NodeService, router: Router): Reducer<State, Ac
           return of(state);
         }
         else if (route.routeConfig.path === "nodes") {
-          
-          let nid: string = qp.selected;
-
-          return fetchStateData(backend, state, nid);
+          if (Object.keys(qp).length > 0) {
+            router.navigate([route.routeConfig.path], {replaceUrl: true});  // to remove all query parameters -> svg problem in firefox           
+          }
+          else {
+            store.sendAction({ type: 'LOADGRAPH'});          
+          }                            
         }
+        else if (route.routeConfig.path === "nodes/edit/:id") {
+          store.sendAction({ type: 'LOADITEM', id: route.params["id"] });          
+        }
+
         return of(state);        
+      }
+
+      case 'LOADGRAPH': {
+        return fetchGraphData(backend, state);
+      }
+
+      case 'LOADITEM': {
+        return fetchItemData(backend, state, action.id);
       }
               
       case 'CHANGESELECTION': {
-        return of(ns={...state, selectedId: action.id});
+        return (action.id != state.selectedId) ? of(ns={...state, selectedId: action.id}) : of(state);
+      }
+
+      case 'UPDATESETTINGSNAME' : {
+        let settings: GraphSettings = { name: action.name }
+        return backend.updateGraphSettings(settings).pipe(
+          map(s => ns={...state, settings: s })
+        );
       }
 
       case 'UPDATESORTORDER': {
@@ -73,12 +114,14 @@ export function reducer(backend: NodeService, router: Router): Reducer<State, Ac
       }
 
       case 'UPDATENODE': {
-        return backend.updateNode(action.nodeId, action.name).pipe(
+        return backend.updateNode(action.nodeId, action.name, action.description).pipe(
           map(n => {
             let upd = {...state.nodes };
             upd[action.nodeId] = n;
             return ns={...state, nodes: upd};
-        })); 
+        }),
+        tap(x => router.navigate(['nodes']))
+      ); 
       }
 
       case 'UPDATELINK': {
@@ -127,6 +170,12 @@ export function reducer(backend: NodeService, router: Router): Reducer<State, Ac
         );
       }
 
+      case 'ADDMODAL': {
+        let config: ModalOptions = { initialState: { sourceNode: action.item } };
+        modal.show(ModalAddNodeComponent, config);
+        return of(state);
+      }
+
       case 'ADDNODE': {
         return backend.addNode(action.targetNodeName).pipe(
           map((node) => {
@@ -172,7 +221,7 @@ export function reducer(backend: NodeService, router: Router): Reducer<State, Ac
 
       case 'READFROMFILE': {
         return backend.setFromFile(action.file).pipe(
-          switchMap(b => fetchStateData(backend, state, null))
+          switchMap(b => fetchGraphData(backend, state))
         );
       }
 

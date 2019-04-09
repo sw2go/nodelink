@@ -1,0 +1,49 @@
+<div *ngIf="item$ | async as item" class="card mt-2">    
+    <div class="card-body">
+      <div class="d-flex align-items-center">
+        <div>
+          <span class="h5 v-align">Link</span>
+        </div>  
+        <div class="btn-group ml-auto" dropdown> <!-- ngx-dropdown -->
+          <button class="btn btn-primary" [disabled]="disable" (click)="updateItem(item.id, itemLabel.value)">Update</button>
+          <button id="button-split" type="button" dropdownToggle class="btn btn-primary dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-split">
+            <span class="caret"></span>
+            <span class="sr-only">Split button!</span>
+          </button>
+          <ul id="dropdown-split" *dropdownMenu class="dropdown-menu dropdown-menu-right"
+              role="menu" aria-labelledby="button-split">
+            <li role="menuitem"><button class="dropdown-item" [disabled]="disable" (click)="updateItem(item.id, itemLabel.value)">Update</button></li>
+            <li role="menuitem"><span   class="dropdown-item" (click)="deleteItem(item.id)">Remove Link</span></li>
+          </ul>
+        </div>
+      </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      <div class="input-group mt-3">
+        <div class="input-group-prepend">
+          <span class="input-group-text" id="basic-addon1">Name</span>
+        </div>
+        <input #itemLabel class="form-control" [value]="item.label" (keyup)="disable = $event.target.value == item.label" >                    
+      </div>       
+    </div>
+  </div>
