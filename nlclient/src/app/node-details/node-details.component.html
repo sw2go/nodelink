@@ -2,14 +2,14 @@
   <div class="card-body">
     <div class="d-flex align-items-center"> <!--  damit die 2 inneren div's horizontal mittig ausgerichtet werden -->
       <div>
-        <span class="h5 v-align">Graph</span>
+        <span class="h5 v-align">Node</span>
       </div>
       <button [disabled]="disable" class="btn btn-primary ml-auto" (click)="updateItem(item.id, name1.value, desc1.value )">Update</button>
       <button class="btn btn-primary ml-3" routerLink="/nodes" [queryParams]="{ selected: item.id }">Cancel</button>
     </div>  
     <div class="form-group mt-3">
       <label for="name1">Name</label>
-      <input #name1 class="form-control" [value]="item.label" (keyup)="disable = item.label == $event.target.value" >            
+      <textarea #name1 class="form-control" [value]="item.label" (keyup)="disable = item.label == $event.target.value" ></textarea>          
       </div> 
     <div class="form-group mt-3">
       <label for="desc1">Description</label>

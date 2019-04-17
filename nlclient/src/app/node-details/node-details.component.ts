@@ -7,6 +7,7 @@ import { Action } from '../state/reducer';
 import { ChangeAnalyzer } from '../state/changeanalyzer';
 import { map, filter, tap } from 'rxjs/operators';
 import { ItemType } from '../model/item';
+import { Router } from '@angular/router';
 
 
 @Component({
@@ -19,7 +20,7 @@ export class NodeDetailsComponent implements OnInit {
   item$: Observable<NodeItem>;  // for use in html-template with async-pipe ( advantage: no code for unsubscribe required )
   disable: boolean;
 
-  constructor(private store: Store<State, Action>) { 
+  constructor(private store: Store<State, Action>, private router: Router) { 
 
     this.item$ = store.state$.pipe(
       map(x => ChangeAnalyzer.ItemSelectionChanged(x) || ChangeAnalyzer.ItemUpdated(x) ), //  
@@ -35,7 +36,10 @@ export class NodeDetailsComponent implements OnInit {
   }
 
   updateItem(id: string, name: string, description: string) {
-    this.store.sendAction({type: "UPDATENODE", nodeId: id, name: name, description: description});
+    this.store.sendAction({type: "UPDATENODE", nodeId: id, name: name, description: description}).subscribe( 
+      ok => this.router.navigate(['nodes']),
+      err => console.log(err)
+    );
   }
 
   test() {

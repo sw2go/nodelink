@@ -35,9 +35,19 @@
                 [attr.stroke]="'black'"
                 [attr.stroke-width]="(selectedId() == node.id) ? '3' : '0'"  
               />
+
+              <svg:text [attr.x]="10" [attr.y]="node.dimension.height / (node.labels.length + 1)">
+                <tspan [attr.x]="node.dimension.width / 2" text-anchor="middle" dy="0.4em">{{node.labels[0]}}</tspan>                              
+                <tspan [attr.x]="node.dimension.width / 2" text-anchor="middle" dy="1em" *ngFor="let lb of node.labels | slice:1">{{lb}}</tspan>  
+                <tspan [attr.x]="node.dimension.width / 2" text-anchor="middle" dy="0.4em" *ngIf="node.labels.length > 1" fill-opacity="0">A</tspan>
+              </svg:text>
+
+            
+              <!-- bisher so
               <svg:text alignment-baseline="central" [attr.x]="10" [attr.y]="node.dimension.height / 2">
                 {{node.label}}
               </svg:text>
+              -->
             </svg:g>              
           </ng-template>
 

@@ -29,13 +29,11 @@ export type ChangeSelection = { type: 'CHANGESELECTION', id: string};
 export type LoadItem = { type: 'LOADITEM', id: string};
 export type LoadGraph = { type: 'LOADGRAPH'};
 export type Test = { type: 'TEST'};
-export type AddModal = { type: 'ADDMODAL', item: NodeItem};
 
 
 export type Action = RouterNavigation | UpdateSettingsName | UpdateSortOrder | DeleteLink |
  DeleteNode | AddNode | AddLink | AddLinkAndNode | UpdateNode | UpdateLink |
- ReadFromFile | ChangeSelection | Test | LoadItem | LoadGraph | AddModal;
-
+ ReadFromFile | ChangeSelection | Test | LoadItem | LoadGraph;
 
 function fetchGraphData(backend: NodeService, state: State): Observable<State> {
   return backend.getNodes().pipe( 
@@ -119,8 +117,7 @@ export function reducer(backend: NodeService, modal: BsModalService, router: Rou
             let upd = {...state.nodes };
             upd[action.nodeId] = n;
             return ns={...state, nodes: upd};
-        }),
-        tap(x => router.navigate(['nodes']))
+        })        
       ); 
       }
 
@@ -168,12 +165,6 @@ export function reducer(backend: NodeService, modal: BsModalService, router: Rou
             return ns={ ...state, nodes: nodes, nlist: nlist, links: links, llist: llist, selectedId: null};
           })
         );
-      }
-
-      case 'ADDMODAL': {
-        let config: ModalOptions = { initialState: { sourceNode: action.item } };
-        modal.show(ModalAddNodeComponent, config);
-        return of(state);
       }
 
       case 'ADDNODE': {

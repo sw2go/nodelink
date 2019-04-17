@@ -9,6 +9,8 @@ import { Observable } from 'rxjs';
 import { GraphSettings } from '../../model/graphsettings';
 import { ChangeAnalyzer } from '../../state/changeanalyzer';
 import { map, filter } from 'rxjs/operators';
+import { BsModalRef, BsModalService, ModalOptions } from 'ngx-bootstrap/modal';
+import { ModalAddNodeComponent } from '../../modal-add-node/modal-add-node.component';
 
 @Component({
   selector: 'app-graphcontext',
@@ -22,7 +24,7 @@ export class GraphContextComponent implements OnInit {
 
   item$: Observable<GraphSettings>;
 
-  constructor(private store: Store<State, Action>, private nodeservice: NodeService) {
+  constructor(private store: Store<State, Action>, private nodeservice: NodeService, private modal: BsModalService) {
     this.item$ = store.state$.pipe(
       map(x => ChangeAnalyzer.GraphSettingsChanged(x)),
       filter( x => x != null),
@@ -51,7 +53,8 @@ export class GraphContextComponent implements OnInit {
   }
 
   addNode() {
-    this.store.sendAction({ type: "ADDMODAL" , item: null})
+    let config: ModalOptions = { initialState: { sourceNode: null } };
+    this.modal.show(ModalAddNodeComponent, config);  
   }
 
 }

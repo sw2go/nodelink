@@ -27,7 +27,6 @@ import { ChangeAnalyzer } from '../../state/changeanalyzer';
 export class GraphviewComponent implements OnInit, OnDestroy, AfterViewInit {
 
   statesub: Subscription;
-  modalRef: BsModalRef;
   
   selectedItem: Item = null;
 
@@ -39,7 +38,7 @@ export class GraphviewComponent implements OnInit, OnDestroy, AfterViewInit {
 
   url: string;    // path only ( without param and fragment for firefox svg-problems )
 
-  constructor(private activatedRoute: ActivatedRoute, private router: Router, private layoutservice: LayoutService, private nodeservice: NodeService, private modalservice: BsModalService, private store: Store<State, Action>) { 
+  constructor(private activatedRoute: ActivatedRoute, private router: Router, private layoutservice: LayoutService, private nodeservice: NodeService, private modal: BsModalService, private store: Store<State, Action>) { 
     this.url = /[^#?]+/.exec(this.router.url)[0]; 
     console.log(">>> " +  this.url);
   }
@@ -131,7 +130,8 @@ export class GraphviewComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   showAddLinkNode(sourceNode: NodeItem) {
-    this.store.sendAction({type: "ADDMODAL", item: sourceNode});
+    let config: ModalOptions = { initialState: { sourceNode: sourceNode } };
+    this.modal.show(ModalAddNodeComponent, config);  
   }
 
   deleteNode(node: NodeItem) {    

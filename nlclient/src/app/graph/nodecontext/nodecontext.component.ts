@@ -7,6 +7,8 @@ import { map, filter } from 'rxjs/operators';
 import { ItemType } from '../../model/item';
 import { State } from '../../model/state';
 import { ChangeAnalyzer } from '../../state/changeanalyzer';
+import { BsModalService, ModalOptions } from 'ngx-bootstrap/modal';
+import { ModalAddNodeComponent } from '../../modal-add-node/modal-add-node.component';
 
 @Component({
   selector: 'app-nodecontext',
@@ -17,7 +19,7 @@ export class NodeContextComponent implements OnInit {
 
   item$: Observable<NodeItem>;  // for use in html-template with async-pipe ( advantage: no code for unsubscribe required )
 
-  constructor(private store: Store<State, Action>) { 
+  constructor(private store: Store<State, Action>, private modal: BsModalService) { 
 
     this.item$ = store.state$.pipe(
       map(x => ChangeAnalyzer.ItemSelectionChanged(x)), //  
@@ -35,7 +37,8 @@ export class NodeContextComponent implements OnInit {
   }
 
   addLink(item: NodeItem) {
-    this.store.sendAction({type: "ADDMODAL", item: item});
+    let config: ModalOptions = { initialState: { sourceNode: item } };
+    this.modal.show(ModalAddNodeComponent, config);  
   }
 
   deleteNode(id: string) {
