@@ -8,6 +8,7 @@ import { AppComponent } from './app.component';
 import { GraphviewComponent } from './graph/graphview/graphview.component';
 import { SortableModule } from 'ngx-bootstrap/sortable';
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
+import { ButtonsModule } from 'ngx-bootstrap'
 import { ModalModule, BsModalService } from 'ngx-bootstrap/modal';
 import { NodeService } from './service/node.service';
 import { ModalAddNodeComponent } from './modal-add-node/modal-add-node.component';
@@ -47,6 +48,7 @@ import { GraphContextComponent } from './graph/graphcontext/graphcontext.compone
     AppRoutingModule,
     NgxGraphModule,
     BsDropdownModule.forRoot(),
+    ButtonsModule.forRoot(),
     SortableModule.forRoot(),
     ModalModule.forRoot()
   ],

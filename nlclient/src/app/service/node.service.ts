@@ -15,10 +15,10 @@ export class NodeService {
 
   constructor() { 
 
-    let n1: NodeItem = new NodeItem(this.newNodeId(), "N1", null);
-    let n2: NodeItem = new NodeItem(this.newNodeId(), "N2", null);
-    let n3: NodeItem = new NodeItem(this.newNodeId(), "N3", null);
-    let n4: NodeItem = new NodeItem(this.newNodeId(), "N4", null);
+    let n1: NodeItem = new NodeItem(this.newNodeId(), "XxxxN1xxxxX\nN1\nXxxxN1xxxxX", null, 0);
+    let n2: NodeItem = new NodeItem(this.newNodeId(), "XxxxN2xxxxX\nN2\nXxxxN2xxxxX", null, 1);
+    let n3: NodeItem = new NodeItem(this.newNodeId(), "XxxxN3xxxxX\nN3\nXxxxN3xxxxX", null, 2);
+    let n4: NodeItem = new NodeItem(this.newNodeId(), "N4", null, 0);
 
     let l1: LinkItem = new LinkItem(this.newLinkId(),n1.id, n2.id, "L1")
     let l2: LinkItem = new LinkItem(this.newLinkId(),n1.id, n3.id, "L2")
@@ -57,7 +57,7 @@ export class NodeService {
 
   // liefert neuen Node
   addNode(targetNodeName: string): Observable<NodeItem> {    
-    let targetNode = new NodeItem(this.newNodeId(), targetNodeName, null);
+    let targetNode = new NodeItem(this.newNodeId(), targetNodeName, null, 0);
     this.nodes.push(targetNode);
     return of(targetNode);
   }
@@ -68,7 +68,7 @@ export class NodeService {
     if (six < 0)
       throw new RangeError("sourceId " + sourceNodeId + " not found");
     
-    let targetNode = new NodeItem(this.newNodeId(), targetNodeName, null);
+    let targetNode = new NodeItem(this.newNodeId(), targetNodeName, null, 0);
     this.nodes.splice(six+1, 0, targetNode);
 
     let lid = this.newLinkId();
@@ -92,12 +92,12 @@ export class NodeService {
     return of(newLink);
   }
 
-  updateNode(nodeId: string, name: string, desc: string ): Observable<NodeItem> {
-    let nix = this.nodes.findIndex(n => n.id == nodeId);
+  updateNode(node: NodeItem): Observable<NodeItem> {
+    let nix = this.nodes.findIndex(n => n.id == node.id);
     if (nix<0)
-      throw new RangeError("nodeId " + nodeId + " not found");
+      throw new RangeError("nodeId " + node.id + " not found");
     //let upd: NodeItem = {...this.nodes[nix], label: name} as NodeItem;
-    let upd: NodeItem = new NodeItem(nodeId, name, desc); // da obige Zeile mit spread-operator immer ein "object" statt ein NodeItem liefert
+    let upd: NodeItem = node; // da obige Zeile mit spread-operator immer ein "object" statt ein NodeItem liefert
     this.nodes[nix] = upd;
     if (name == "e")
       throw new Error('update failed with E!');
@@ -192,7 +192,7 @@ export class NodeService {
   }
 
   hrefGraphData(): string {
-    let data = { settings: this.settings, nodes: this.nodes.map(n => new NodeItem(n.id, n.label, n.description)), links: this.links.map(l => new LinkItem(l.id, l.source, l.target, l.label)) };
+    let data = { settings: this.settings, nodes: this.nodes.map(n => new NodeItem(n.id, n.label, n.description, n.shape)), links: this.links.map(l => new LinkItem(l.id, l.source, l.target, l.label)) };
     let json = JSON.stringify(data);
     let blob = new Blob([json], {type: "application/json"});
     return URL.createObjectURL(blob);
@@ -202,10 +202,31 @@ export class NodeService {
 
     return readFile(file).pipe(        
       map(str => {
-        let data: { settings: GraphSettings, nodes: NodeItem[], links: LinkItem[] } = JSON.parse(str);
-        this.settings = data.settings;
-        this.nodes = data.nodes;
-        this.links = data.links;
+        let parsedData: { settings: GraphSettings, nodes: NodeItem[], links: LinkItem[] } = JSON.parse(str);
+
+        let nodes: NodeItem[] = [];      
+        parsedData.nodes.forEach(n => {
+          nodes.push(new NodeItem(
+            n.id,
+            n.label,
+            n.description,
+            (n.shape !== undefined) ? n.shape : 0
+          ));
+        });
+
+        let links: LinkItem[] = [];
+        parsedData.links.forEach(l => {
+          links.push(new LinkItem(
+            l.id,
+            l.source,
+            l.target,
+            l.label
+          ));
+        });
+
+        this.settings = { name: parsedData.settings.name };
+        this.nodes = nodes;
+        this.links = links;
         return true;
       })
     );

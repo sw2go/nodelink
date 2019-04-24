@@ -7,7 +7,8 @@ export class NodeItem implements Item {
     public constructor(
         public id: string,
         public label: string,
-        public description: string
+        public description: string,
+        public shape: number
     ){
         this.type = ItemType.Node;
         this.labels = label.split(/\n/);

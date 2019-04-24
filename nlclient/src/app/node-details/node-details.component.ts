@@ -35,8 +35,11 @@ export class NodeDetailsComponent implements OnInit {
   ngOnInit() {
   }
 
-  updateItem(id: string, name: string, description: string) {
-    this.store.sendAction({type: "UPDATENODE", nodeId: id, name: name, description: description}).subscribe( 
+  updateItem(id: string, name: string, description: string, shape: number) {
+
+    console.log(shape);
+
+    this.store.sendAction({type: "UPDATENODE", node: new NodeItem(id, name, description, shape)}).subscribe( 
       ok => this.router.navigate(['nodes']),
       err => console.log(err)
     );

@@ -28,13 +28,100 @@
             <svg:g class="node" (contextmenu)="showContextMenu(node, $event.clientX, $event.clientY)" 
                                 (dblclick)="editNode(node.id)" 
                                 (click)="selectionChanged(node.id); $event.stopPropagation();">
-              <svg:rect
+
+              <!--
+
+
+
+              -->
+
+              <!--
+
+              <svg:ellipse
+              [attr.rx] = "node.dimension.width / 2"
+              [attr.ry] = "node.dimension.height / 2"
+              [attr.cx]="node.dimension.width / 2"
+              [attr.cy]="node.dimension.height / 2"
+              [attr.fill]="node.data.color"
+              [attr.stroke]="'black'"
+              [attr.stroke-width]="(selectedId() == node.id) ? '3' : '0'"
+            />
+
+
+            <svg:polygon
+            [attr.points]="
+                                     '0'         + ',' +        '0' 
+                         + ' ' 
+                         +           '0'         + ',' + node.dimension.height 
+                         + ' ' 
+                         +  node.dimension.width + ',' + node.dimension.height 
+                         + ' '
+                         +  node.dimension.width + ',' +        '0'                          
+                         "
+            [attr.fill]="node.data.color"
+            [attr.stroke]="'black'"
+            [attr.stroke-width]="(selectedId() == node.id) ? '3' : '0'"
+          />
+
+
+
+
+            <svg:polygon
+            [attr.points]="
+                                     '0'         + ',' +        '0' 
+                         + ' ' 
+                         +           '0'         + ',' + node.dimension.height 
+                         + ' ' 
+                         +  node.dimension.width + ',' + node.dimension.height 
+                         + ' '
+                         +  node.dimension.width + ',' +        '0'                          
+                         "
+            [attr.fill]="node.data.color"
+            [attr.stroke]="'black'"
+            [attr.stroke-width]="(selectedId() == node.id) ? '3' : '0'"
+          />
+
+            -->
+
+              <svg:rect *ngIf="node.shape == 0"
                 [attr.width]="node.dimension.width"
                 [attr.height]="node.dimension.height"
                 [attr.fill]="node.data.color"
                 [attr.stroke]="'black'"
                 [attr.stroke-width]="(selectedId() == node.id) ? '3' : '0'"  
               />
+
+              <svg:rect *ngIf="node.shape == 1"
+                [attr.x]="-node.dimension.height/8"
+                [attr.width]="node.dimension.width + node.dimension.height/4"
+                [attr.height]="node.dimension.height"
+                [attr.rx]="node.dimension.height/2"
+                [attr.ry]="node.dimension.height/2"
+
+                [attr.fill]="node.data.color"
+                [attr.stroke]="'black'"
+                [attr.stroke-width]="(selectedId() == node.id) ? '3' : '0'"  
+              />
+
+              <svg:polygon *ngIf="node.shape == 2"
+              [attr.points]="
+                              node.dimension.height/8                          + ',' +        '0'              + ' ' 
+                           + -node.dimension.height/8                          + ',' + node.dimension.height/2 + ' '                                        
+                           +  node.dimension.height/8                          + ',' + node.dimension.height   + ' ' 
+                           +  (node.dimension.width - node.dimension.height/8) + ',' + node.dimension.height   + ' '
+                           +  (node.dimension.width + node.dimension.height/8) + ',' + node.dimension.height/2 + ' '
+                           +  (node.dimension.width - node.dimension.height/8) + ',' +        '0'                          
+                           "
+              [attr.fill]="node.data.color"
+              [attr.stroke]="'black'"
+              [attr.stroke-width]="(selectedId() == node.id) ? '3' : '0'"
+            />
+
+
+
+
+
+
 
               <svg:text [attr.x]="10" [attr.y]="node.dimension.height / (node.labels.length + 1)">
                 <tspan [attr.x]="node.dimension.width / 2" text-anchor="middle" dy="0.4em">{{node.labels[0]}}</tspan>                              

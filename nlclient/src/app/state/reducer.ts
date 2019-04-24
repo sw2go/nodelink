@@ -22,7 +22,7 @@ export type AddLink = { type: 'ADDLINK', sourceNodeId: string, targetNodeId: str
 export type AddLinkAndNode = { type: 'ADDLINKANDNODE', sourceNodeId: string, targetNodeName: string };
 export type DeleteNode = { type: 'DELETENODE', nodeId: string };
 export type DeleteLink = { type: 'DELETELINK', linkId: string };
-export type UpdateNode = { type: 'UPDATENODE', nodeId: string, name: string, description: string };
+export type UpdateNode = { type: 'UPDATENODE', node: NodeItem };
 export type UpdateLink = { type: 'UPDATELINK', linkId: string, name: string };
 export type ReadFromFile = { type: 'READFROMFILE', file: File };
 export type ChangeSelection = { type: 'CHANGESELECTION', id: string};
@@ -112,10 +112,10 @@ export function reducer(backend: NodeService, modal: BsModalService, router: Rou
       }
 
       case 'UPDATENODE': {
-        return backend.updateNode(action.nodeId, action.name, action.description).pipe(
+        return backend.updateNode(action.node).pipe(
           map(n => {
             let upd = {...state.nodes };
-            upd[action.nodeId] = n;
+            upd[n.id] = n;
             return ns={...state, nodes: upd};
         })        
       ); 

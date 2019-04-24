@@ -4,13 +4,22 @@
       <div>
         <span class="h5 v-align">Node</span>
       </div>
-      <button [disabled]="disable" class="btn btn-primary ml-auto" (click)="updateItem(item.id, name1.value, desc1.value )">Update</button>
+      <button [disabled]="disable" class="btn btn-primary ml-auto" (click)="updateItem(item.id, name1.value, desc1.value, select1.value)">Update</button>
       <button class="btn btn-primary ml-3" routerLink="/nodes" [queryParams]="{ selected: item.id }">Cancel</button>
     </div>  
     <div class="form-group mt-3">
       <label for="name1">Name</label>
-      <textarea #name1 class="form-control" [value]="item.label" (keyup)="disable = item.label == $event.target.value" ></textarea>          
-      </div> 
+      <textarea #name1 class="form-control" [value]="item.label" (keyup)="disable = disable && (item.label == $event.target.value)" ></textarea>          
+    </div> 
+    <div class="form-group mt-3">
+      <label for="select1">Shape</label>
+      <select #select1 class="browser-default custom-select" [value]="item.shape" (click)="disable = disable && (item.shape == $event.target.value)">         
+          <option value="0">Rechteck 0</option>
+          <option value="1">Rund 1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>         
+    </div> 
     <div class="form-group mt-3">
       <label for="desc1">Description</label>
       <textarea #desc1 class="form-control" [value]="item.description" rows="7" (keyup)="disable = item.description == $event.target.value"></textarea>               
