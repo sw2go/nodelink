@@ -36,14 +36,23 @@ export class NodeService {
     this.settings = { name: "nodelink" };
   }
 
+  private nextId(): number {  // to ensure unique Id's also after loading graph from file    
+    while(true) {
+      this.id = this.id + 1;
+      if (this.nodes.findIndex(i => i.id == "N" + this.id)>=0)
+        continue;
+      if (this.links.findIndex(i => i.id == "L" + this.id)>=0)
+        continue;
+      return this.id;
+    }
+  }
+
   private newNodeId(): string {
-    this.id = this.id + 1;
-    return "N" + this.id.toString();
+    return "N" + this.nextId().toString();
   }
 
   private newLinkId(): string {
-    this.id = this.id + 1;
-    return "L" + this.id.toString();
+    return "L" + this.nextId().toString();
   }
 
   getGraphSettings(): Observable<GraphSettings> {
@@ -206,22 +215,26 @@ export class NodeService {
 
         let nodes: NodeItem[] = [];      
         parsedData.nodes.forEach(n => {
-          nodes.push(new NodeItem(
-            n.id,
-            n.label,
-            n.description,
-            (n.shape !== undefined) ? n.shape : 0
-          ));
+          if(nodes.findIndex(i => i.id == n.id)<0) {  // zur Sicherheit damit von aussen kein Schrott rein kommt
+            nodes.push(new NodeItem(
+              n.id,
+              n.label,
+              n.description,
+              (n.shape !== undefined) ? n.shape : 0
+            ));
+          }        
         });
 
         let links: LinkItem[] = [];
         parsedData.links.forEach(l => {
-          links.push(new LinkItem(
-            l.id,
-            l.source,
-            l.target,
-            l.label
-          ));
+          if (links.findIndex(i => i.id == l.id)<0) { // zur Sicherheit damit von aussen kein Schrott rein kommt
+            links.push(new LinkItem(
+              l.id,
+              l.source,
+              l.target,
+              l.label
+            ));  
+          }
         });
 
         this.settings = { name: parsedData.settings.name };

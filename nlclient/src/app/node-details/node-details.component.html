@@ -14,10 +14,9 @@
     <div class="form-group mt-3">
       <label for="select1">Shape</label>
       <select #select1 class="browser-default custom-select" [value]="item.shape" (click)="disable = disable && (item.shape == $event.target.value)">         
-          <option value="0">Rechteck 0</option>
-          <option value="1">Rund 1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
+          <option value=0>Rechteck</option>
+          <option value=1>Rund</option>
+          <option value=2>6-Eck</option>
         </select>         
     </div> 
     <div class="form-group mt-3">
