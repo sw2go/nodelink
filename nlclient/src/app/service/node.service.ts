@@ -4,6 +4,8 @@ import { Observable, of, throwError } from 'rxjs';
 import { LinkItem } from '../model/linkitem';
 import { map, switchMap, tap } from 'rxjs/operators';
 import { GraphSettings } from '../model/graphsettings';
+import { NodeColorOption } from '../model/nodecoloroption';
+import { NodeShapeOption } from '../model/nodeshapeoption';
 
 @Injectable()
 export class NodeService {
@@ -13,12 +15,30 @@ export class NodeService {
   private links: LinkItem[] = [];
   private settings: GraphSettings;
 
+  private colors: NodeColorOption[] = [ 
+    { text: "red",    color: "#EF9A9A" },
+    { text: "purple", color: "#CE93D8" },                             
+    { text: "blue",   color: "#90CAF9" },
+    { text: "green",  color: "#A5D6A7" },
+    { text: "yellow", color: "#FFF59D" },
+    { text: "orange", color: "#FFCC80" },
+    { text: "brown",  color: "#BCAAA4" },
+    { text: "gray",   color: "#EEEEEE" },
+  ];
+
+  private shapes: NodeShapeOption[] = [
+    { text: "Rechteck", shape: 0, defaultColorOption: this.colors[this.colors.findIndex(i => i.text == "blue")] },    
+    { text: "6-Eck",    shape: 2, defaultColorOption: this.colors[this.colors.findIndex(i => i.text == "orange")] },
+    { text: "Rund",     shape: 1, defaultColorOption: this.colors[this.colors.findIndex(i => i.text == "brown")] },
+  ]
+
+
   constructor() { 
 
-    let n1: NodeItem = new NodeItem(this.newNodeId(), "XxxxN1xxxxX\nN1\nXxxxN1xxxxX", null, 0);
-    let n2: NodeItem = new NodeItem(this.newNodeId(), "XxxxN2xxxxX\nN2\nXxxxN2xxxxX", null, 1);
-    let n3: NodeItem = new NodeItem(this.newNodeId(), "XxxxN3xxxxX\nN3\nXxxxN3xxxxX", null, 2);
-    let n4: NodeItem = new NodeItem(this.newNodeId(), "N4", null, 0);
+    let n1: NodeItem = new NodeItem(this.newNodeId(), "XxxxN1xxxxX\nN1\nXxxxN1xxxxX", null, 0, this.getNodeDefaultColor(0));
+    let n2: NodeItem = new NodeItem(this.newNodeId(), "XxxxN2xxxxX\nN2\nXxxxN2xxxxX", null, 1, this.getNodeDefaultColor(1));
+    let n3: NodeItem = new NodeItem(this.newNodeId(), "XxxxN3xxxxX\nN3\nXxxxN3xxxxX", null, 2, this.getNodeDefaultColor(2));
+    let n4: NodeItem = new NodeItem(this.newNodeId(), "N4", null, 0, this.getNodeDefaultColor(0));
 
     let l1: LinkItem = new LinkItem(this.newLinkId(),n1.id, n2.id, "L1")
     let l2: LinkItem = new LinkItem(this.newLinkId(),n1.id, n3.id, "L2")
@@ -66,7 +86,7 @@ export class NodeService {
 
   // liefert neuen Node
   addNode(targetNodeName: string): Observable<NodeItem> {    
-    let targetNode = new NodeItem(this.newNodeId(), targetNodeName, null, 0);
+    let targetNode = new NodeItem(this.newNodeId(), targetNodeName, null, 0, this.getNodeDefaultColor(0));
     this.nodes.push(targetNode);
     return of(targetNode);
   }
@@ -77,7 +97,7 @@ export class NodeService {
     if (six < 0)
       throw new RangeError("sourceId " + sourceNodeId + " not found");
     
-    let targetNode = new NodeItem(this.newNodeId(), targetNodeName, null, 0);
+    let targetNode = new NodeItem(this.newNodeId(), targetNodeName, null, 0, this.getNodeDefaultColor(0));
     this.nodes.splice(six+1, 0, targetNode);
 
     let lid = this.newLinkId();
@@ -183,6 +203,28 @@ export class NodeService {
     return of ({links, llist});
   }
 
+  getNodeShapeOptions(): NodeShapeOption[] {
+    let shapes = this.shapes;
+    return shapes;
+  }
+
+  getNodeColorOptions(item: NodeItem): NodeColorOption[] {
+
+    let colors = this.colors;
+
+    if ( item && item.color && colors.findIndex(c => c.color == item.color ) < 0) {
+      colors.splice( 0, 0, { text: "custom", color: item.color });
+    }
+    return colors;  
+  }
+
+  getNodeDefaultColor(shape: number): string {
+    if (!shape)
+      shape = 0;
+
+    return this.shapes[this.shapes.findIndex(i => i.shape == shape)].defaultColorOption.color;
+  }
+
 
 
 
@@ -201,7 +243,7 @@ export class NodeService {
   }
 
   hrefGraphData(): string {
-    let data = { settings: this.settings, nodes: this.nodes.map(n => new NodeItem(n.id, n.label, n.description, n.shape)), links: this.links.map(l => new LinkItem(l.id, l.source, l.target, l.label)) };
+    let data = { settings: this.settings, nodes: this.nodes.map(n => new NodeItem(n.id, n.label, n.description, n.shape, n.color)), links: this.links.map(l => new LinkItem(l.id, l.source, l.target, l.label)) };
     let json = JSON.stringify(data);
     let blob = new Blob([json], {type: "application/json"});
     return URL.createObjectURL(blob);
@@ -216,11 +258,13 @@ export class NodeService {
         let nodes: NodeItem[] = [];      
         parsedData.nodes.forEach(n => {
           if(nodes.findIndex(i => i.id == n.id)<0) {  // zur Sicherheit damit von aussen kein Schrott rein kommt
+            let shape =  (n.shape !== undefined) ? n.shape : 0;
             nodes.push(new NodeItem(
               n.id,
               n.label,
               n.description,
-              (n.shape !== undefined) ? n.shape : 0
+              shape,
+              (n.color !== undefined) ? n.color : this.getNodeDefaultColor(shape)
             ));
           }        
         });

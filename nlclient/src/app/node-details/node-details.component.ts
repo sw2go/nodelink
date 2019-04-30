@@ -8,6 +8,9 @@ import { ChangeAnalyzer } from '../state/changeanalyzer';
 import { map, filter, tap } from 'rxjs/operators';
 import { ItemType } from '../model/item';
 import { Router } from '@angular/router';
+import { NodeService } from '../service/node.service';
+import { NodeColorOption } from '../model/nodecoloroption';
+import { NodeShapeOption } from '../model/nodeshapeoption';
 
 
 @Component({
@@ -17,29 +20,38 @@ import { Router } from '@angular/router';
 })
 export class NodeDetailsComponent implements OnInit {
 
+  selectedColor: string;
+  colorOptions: NodeColorOption[];  
+  shapeOptions: NodeShapeOption[];
+  
   item$: Observable<NodeItem>;  // for use in html-template with async-pipe ( advantage: no code for unsubscribe required )
   disable: boolean;
 
-  constructor(private store: Store<State, Action>, private router: Router) { 
+  constructor(private store: Store<State, Action>, private router: Router, private ns: NodeService) { 
 
     this.item$ = store.state$.pipe(
       map(x => ChangeAnalyzer.ItemSelectionChanged(x) || ChangeAnalyzer.ItemUpdated(x) ), //  
       filter( x => x != null),  
-      tap(x => this.disable = true),
-      tap(x => console.log( "NodeDetails State$", x.item) ),                        // 
+      tap(x => {     
+        this.disable = true;
+        this.shapeOptions = ns.getNodeShapeOptions();        
+        this.colorOptions = ns.getNodeColorOptions(x.item as NodeItem);
+        this.selectedColor = (x.item as NodeItem).color;
+      }),      
+
+      tap(x => console.log( "NodeDetails State$", x.item) ),                        //       
       map(x => { return ((x.item) ? (x.item.type == ItemType.Node) ? x.item : null : null) as NodeItem; })
     )
-
   }
 
   ngOnInit() {
   }
 
-  updateItem(id: string, name: string, description: string, shape: number) {
+  updateItem(id: string, name: string, description: string, shape: number, color: string) {
 
     console.log(shape);
 
-    this.store.sendAction({type: "UPDATENODE", node: new NodeItem(id, name, description, shape)}).subscribe( 
+    this.store.sendAction({type: "UPDATENODE", node: new NodeItem(id, name, description, shape, color)}).subscribe( 
       ok => this.router.navigate(['nodes']),
       err => console.log(err)
     );

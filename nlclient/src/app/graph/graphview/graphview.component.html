@@ -86,7 +86,7 @@
               <svg:rect *ngIf="node.shape == 0"
                 [attr.width]="node.dimension.width"
                 [attr.height]="node.dimension.height"
-                [attr.fill]="node.data.color"
+                [attr.fill]="node.color"
                 [attr.stroke]="'black'"
                 [attr.stroke-width]="(selectedId() == node.id) ? '3' : '0'"  
               />
@@ -98,7 +98,7 @@
                 [attr.rx]="node.dimension.height/2"
                 [attr.ry]="node.dimension.height/2"
 
-                [attr.fill]="node.data.color"
+                [attr.fill]="node.color"
                 [attr.stroke]="'black'"
                 [attr.stroke-width]="(selectedId() == node.id) ? '3' : '0'"  
               />
@@ -112,7 +112,7 @@
                            +  (node.dimension.width + node.dimension.height/8) + ',' + node.dimension.height/2 + ' '
                            +  (node.dimension.width - node.dimension.height/8) + ',' +        '0'                          
                            "
-              [attr.fill]="node.data.color"
+              [attr.fill]="node.color"
               [attr.stroke]="'black'"
               [attr.stroke-width]="(selectedId() == node.id) ? '3' : '0'"
             />
