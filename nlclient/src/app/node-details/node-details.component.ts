@@ -5,7 +5,7 @@ import { Store } from '../state/store';
 import { State } from '../model/state';
 import { Action } from '../state/reducer';
 import { ChangeAnalyzer } from '../state/changeanalyzer';
-import { map, filter, tap } from 'rxjs/operators';
+import { map, filter, tap, switchMap } from 'rxjs/operators';
 import { ItemType } from '../model/item';
 import { Router } from '@angular/router';
 import { NodeService } from '../service/node.service';
@@ -20,28 +20,35 @@ import { NodeShapeOption } from '../model/nodeshapeoption';
 })
 export class NodeDetailsComponent implements OnInit {
 
+  selectedShape: number;
   selectedColor: string;
-  colorOptions: NodeColorOption[];  
-  shapeOptions: NodeShapeOption[];
   
   item$: Observable<NodeItem>;  // for use in html-template with async-pipe ( advantage: no code for unsubscribe required )
+  shapeOption$: Observable<NodeShapeOption[]>;
+  colorOption$: Observable<NodeColorOption[]>;
+  
+  
   disable: boolean;
 
   constructor(private store: Store<State, Action>, private router: Router, private ns: NodeService) { 
 
     this.item$ = store.state$.pipe(
-      map(x => ChangeAnalyzer.ItemSelectionChanged(x) || ChangeAnalyzer.ItemUpdated(x) ), //  
-      filter( x => x != null),  
-      tap(x => {     
-        this.disable = true;
-        this.shapeOptions = ns.getNodeShapeOptions();        
-        this.colorOptions = ns.getNodeColorOptions(x.item as NodeItem);
-        this.selectedColor = (x.item as NodeItem).color;
-      }),      
-
-      tap(x => console.log( "NodeDetails State$", x.item) ),                        //       
+      map(x => ChangeAnalyzer.ItemSelectionChanged(x) || ChangeAnalyzer.ItemUpdated(x) ), 
+      filter( x => x != null), 
+      tap(x => this.selectedShape = (x.item as NodeItem).shape), 
+      tap(x => this.disable = true),
       map(x => { return ((x.item) ? (x.item.type == ItemType.Node) ? x.item : null : null) as NodeItem; })
-    )
+    );
+
+    this.shapeOption$ = ns.getNodeShapeOptions();
+
+    this.colorOption$ = store.state$.pipe(
+      map(x => ChangeAnalyzer.ItemSelectionChanged(x) || ChangeAnalyzer.ItemUpdated(x) ),
+      filter( x => x != null),
+      tap(x => this.selectedColor = (x.item as NodeItem).color),
+      switchMap(x => ns.getNodeColorOptions(x.item as NodeItem))
+    );
+
   }
 
   ngOnInit() {

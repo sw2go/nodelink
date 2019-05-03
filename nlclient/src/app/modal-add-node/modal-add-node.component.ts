@@ -51,7 +51,7 @@ export class ModalAddNodeComponent implements OnInit {
     if (this.targetNodeId == 'new' && !this.sourceNode) 
       this.sendAction({type: "ADDNODE", targetNodeName: this.targetNodeName});
     else if (this.targetNodeId == 'new' && this.sourceNode)
-      this.sendAction({type: "ADDLINKANDNODE", sourceNodeId: this.sourceNode.id, targetNodeName: this.targetNodeName});
+      this.sendAction({type: "ADDLINKANDNODE", sourceNodeId: this.sourceNode.id, targetNodeName: this.targetNodeName, targetNodeShape: 0});
     else if (this.targetNodeId != 'new' && this.sourceNode)
       this.sendAction({type: "ADDLINK", sourceNodeId: this.sourceNode.id, targetNodeId: this.targetNodeId});
     else

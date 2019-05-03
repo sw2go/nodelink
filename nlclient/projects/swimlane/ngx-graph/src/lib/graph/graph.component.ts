@@ -407,6 +407,8 @@ export class GraphComponent extends BaseChartComponent implements OnInit, OnChan
         let edge = this.graph.edges.find(nl => `${nl.source}${nl.target}` === normKey) || edgeLabel;
         if (edge)
           oldLink.label = edge.label;   // maybe add others if they need to be displayed in graph
+          oldLink.source = edge.source;
+          oldLink.target = edge.target;
       }
       // fix end 
 

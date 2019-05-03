@@ -35,14 +35,14 @@ export class NodeService {
 
   constructor() { 
 
-    let n1: NodeItem = new NodeItem(this.newNodeId(), "XxxxN1xxxxX\nN1\nXxxxN1xxxxX", null, 0, this.getNodeDefaultColor(0));
-    let n2: NodeItem = new NodeItem(this.newNodeId(), "XxxxN2xxxxX\nN2\nXxxxN2xxxxX", null, 1, this.getNodeDefaultColor(1));
-    let n3: NodeItem = new NodeItem(this.newNodeId(), "XxxxN3xxxxX\nN3\nXxxxN3xxxxX", null, 2, this.getNodeDefaultColor(2));
+    let n1: NodeItem = new NodeItem(this.newNodeId(), "N1", null, 0, this.getNodeDefaultColor(0));
+    let n2: NodeItem = new NodeItem(this.newNodeId(), "N2", null, 1, this.getNodeDefaultColor(1));
+    let n3: NodeItem = new NodeItem(this.newNodeId(), "N3", null, 2, this.getNodeDefaultColor(2));
     let n4: NodeItem = new NodeItem(this.newNodeId(), "N4", null, 0, this.getNodeDefaultColor(0));
 
-    let l1: LinkItem = new LinkItem(this.newLinkId(),n1.id, n2.id, "L1")
-    let l2: LinkItem = new LinkItem(this.newLinkId(),n1.id, n3.id, "L2")
-    let l3: LinkItem = new LinkItem(this.newLinkId(),n1.id, n4.id, "L3")
+    let l1: LinkItem = new LinkItem(this.newLinkId(),n1.id, n2.id, "L5")
+    let l2: LinkItem = new LinkItem(this.newLinkId(),n1.id, n3.id, "L6")
+    let l3: LinkItem = new LinkItem(this.newLinkId(),n1.id, n4.id, "L7")
 
     this.nodes.push(n1);
     this.nodes.push(n2);
@@ -91,18 +91,44 @@ export class NodeService {
     return of(targetNode);
   }
 
+  interposeNewNode(sourceLinkId: string, targetNodeName: string, targetNodeShape: number): Observable<{ changed: LinkItem, added:  {link: LinkItem, node: NodeItem} }> {
+    
+    let lix = this.links.findIndex(l => l.id == sourceLinkId);
+    if (lix < 0)
+      throw new RangeError("sourceId " + sourceLinkId + " not found");
+    let currentLink = this.links[lix];
+    let updatedLink: LinkItem = new LinkItem(currentLink.id, null, currentLink.target, currentLink.label); 
+
+    return this.addLinkAndNode(currentLink.source, sourceLinkId, targetNodeName, targetNodeShape).pipe(
+      tap(n => { updatedLink.source = n.node.id; this.links[lix] = updatedLink; } ),
+      map(n => { return  { changed: this.links[lix], added: n } }),      
+      tap(m => m.changed.source = m.added.node.id )
+    );    
+  } 
+
   // liefert neuen Link und Node
-  addLinkAndNode(sourceNodeId: string, targetNodeName: string): Observable<{link: LinkItem, node: NodeItem}> {
+  addLinkAndNode(sourceNodeId: string, sourceLinkId: string, targetNodeName: string, targetNodeShape: number): Observable<{link: LinkItem, node: NodeItem}> {
+    
     let six = this.nodes.findIndex(n => n.id == sourceNodeId);    
     if (six < 0)
       throw new RangeError("sourceId " + sourceNodeId + " not found");
-    
-    let targetNode = new NodeItem(this.newNodeId(), targetNodeName, null, 0, this.getNodeDefaultColor(0));
+  
+    let newNodeId = this.newNodeId();
+    if (!targetNodeName)
+      targetNodeName = newNodeId;
+
+    let targetNode = new NodeItem(newNodeId, targetNodeName, null, targetNodeShape, this.getNodeDefaultColor(targetNodeShape));
     this.nodes.splice(six+1, 0, targetNode);
 
     let lid = this.newLinkId();
-    let newLink = new LinkItem(lid,sourceNodeId, targetNode.id, lid);
-    this.links.push(newLink);
+    let newLink = new LinkItem(lid, sourceNodeId, targetNode.id, lid);
+  
+    let lix = this.links.findIndex(l => l.id == sourceLinkId);
+    if (lix < 0)
+      this.links.push(newLink);
+    else
+      this.links.splice(lix+1,0,newLink);
+
     return of({link: newLink, node: targetNode});
   }
 
@@ -203,19 +229,19 @@ export class NodeService {
     return of ({links, llist});
   }
 
-  getNodeShapeOptions(): NodeShapeOption[] {
+  getNodeShapeOptions(): Observable<NodeShapeOption[]> {
     let shapes = this.shapes;
-    return shapes;
+    return of(shapes);
   }
 
-  getNodeColorOptions(item: NodeItem): NodeColorOption[] {
+  getNodeColorOptions(item: NodeItem): Observable<NodeColorOption[]> {
 
     let colors = this.colors;
 
     if ( item && item.color && colors.findIndex(c => c.color == item.color ) < 0) {
       colors.splice( 0, 0, { text: "custom", color: item.color });
     }
-    return colors;  
+    return of(colors);  
   }
 
   getNodeDefaultColor(shape: number): string {

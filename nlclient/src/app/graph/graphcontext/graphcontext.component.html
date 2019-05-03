@@ -12,14 +12,15 @@
         </button>
         <ul id="dropdown-split" *dropdownMenu class="dropdown-menu dropdown-menu-right"
             role="menu" aria-labelledby="button-split">
-          <li role="menuitem"><a class="dropdown-item" (click)="relayoutClicked()">Relayout</a></li>        
-          <li role="menuitem">
-              <a class="dropdown-item" href="" download="{{item.name}}.json" (click)="saveGraphToFile($event.target)">Save to file</a>
-          </li>
           <li role="menuitem">  <!--  <span class="dropdown-item" > -->
-              <label class="dropdown-item" style="cursor: pointer;" for="file_upload">Load from file</label>
-              <input class="d-none" type="file" id="file_upload" #fileload (change)="loadGraphFromFile(fileload.files[0])" />              
+            <label class="dropdown-item mb-0" style="cursor: pointer;" for="file_upload">Load from file</label>
+            <input class="d-none" type="file" id="file_upload" #fileload (change)="loadGraphFromFile(fileload.files[0])" />              
+          </li>          
+          <li role="menuitem">
+            <a class="dropdown-item" href="" download="{{item.name}}.json" (click)="saveGraphToFile($event.target)">Save to file</a>
           </li>
+
+          <li role="menuitem"><a class="dropdown-item" (click)="relayoutClicked()">Relayout</a></li>        
           <li class="divider dropdown-divider"></li>
           <li role="menuitem"><a class="dropdown-item" (click)="addNode()">Add Node</a></li>          
         </ul>
@@ -31,5 +32,37 @@
         </div>           
         <input #itemLabel class="form-control" [value]="item.name" (keyup)="changeName($event.target.value)" placeholder="Use a-Z only" required pattern="[A-Za-z]+" >
       </div> 
+      <div *ngIf="shapeOption$ | async as shapeOptions">
+        <div *ngFor="let s of shapeOptions; let i = index" class="mt-3" draggable="true" (dragstart)="dragStart($event, s.shape)" (dragend)="dragEnd($event, s.shape)">
+          <svg [attr.width]="shape.width + 20" [attr.height]="shape.height">            
+
+            <rect *ngIf="s.shape==0"
+              [attr.x]="shape.offset" 
+              [attr.width]="shape.width" 
+              [attr.height]="shape.height" 
+              [attr.fill]="s.defaultColorOption.color" />
+
+            <rect *ngIf="s.shape==1"            
+              [attr.x]="0"  
+              [attr.width]="shape.width + shape.height/4"
+              [attr.height]="shape.height"
+              [attr.rx]="shape.height/2"
+              [attr.ry]="shape.height/2"
+              [attr.fill]="s.defaultColorOption.color" />
+
+            <svg:polygon *ngIf="s.shape == 2"
+              [attr.points]="
+              (shape.offset + shape.height/8 )              + ',' +        '0'     + ' ' 
+           +  (shape.offset - shape.height/8 )              + ',' + shape.height/2 + ' '                                        
+           +  (shape.offset + shape.height/8 )              + ',' + shape.height   + ' ' 
+           +  (shape.offset + shape.width - shape.height/8) + ',' + shape.height   + ' '
+           +  (shape.offset + shape.width + shape.height/8) + ',' + shape.height/2 + ' '
+           +  (shape.offset + shape.width - shape.height/8) + ',' +        '0'                          
+           " 
+           [attr.fill]="s.defaultColorOption.color"
+           />
+          </svg><span>{{s.text}}</span> 
+        </div>
+      </div>
   </div>  
 </div>

@@ -3,7 +3,7 @@ import { NodeItem } from './../../model/nodeitem';
 import { LinkItem } from './../../model/linkitem';
 import { LayoutService } from '@swimlane/ngx-graph/lib/graph/layouts/layout.service';
 import { GraphComponent  } from '@swimlane/ngx-graph/lib/graph/graph.component'
-import { Layout } from '@swimlane/ngx-graph/lib/models';
+import { Layout, Graph } from '@swimlane/ngx-graph/lib/models';
 import { DagreSettings, Orientation } from '@swimlane/ngx-graph/lib/graph/layouts/dagre';
 import { Subscription} from 'rxjs';
 import { NodeService } from '../../service/node.service';
@@ -17,6 +17,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { ContextMenuComponent } from '../../context-menu/context-menu.component';
 import { State } from '../../model/state';
 import { ChangeAnalyzer } from '../../state/changeanalyzer';
+import { sortGraphItems } from './graphsortpolicy';
 
 
 @Component({
@@ -145,5 +146,30 @@ export class GraphviewComponent implements OnInit, OnDestroy, AfterViewInit {
   editNode(id: string) {
     this.router.navigate(['nodes', 'edit', id])
   }
+  dragOver(e: any) {
+    if(true) // drag von uns
+      e.preventDefault();
 
+    console.log("dragOver");
+
+  }
+
+  dropOnNode(e: DragEvent, nodeId: string) {
+    let shape: number = parseInt(e.dataTransfer.getData("text"));
+    this.store.sendAction({type: "ADDLINKANDNODE", sourceNodeId: nodeId, targetNodeName: null, targetNodeShape: shape }).subscribe(
+      x => setTimeout(this.relayout,50, this.graph.graph, this.store)
+    );
+  }
+
+  dropOnLink(e: DragEvent, linkId: string) {
+    let shape: number = parseInt(e.dataTransfer.getData("text"));
+    this.store.sendAction({type: "INTERPOSENEWNODE", sourceLinkId: linkId, targetNodeName: null, targetNodeShape: shape }).subscribe(
+      x => setTimeout(this.relayout,50, this.graph.graph, this.store)
+    );
+  }
+
+  relayout(graph: Graph, store: Store<State,Action>) {
+      let sorted = sortGraphItems(graph.nodes, graph.edges);
+      store.sendAction({type: "UPDATESORTORDER", nodeIds: sorted.nodeIds, linkIds: sorted.linkIds });  
+  }
 }

@@ -19,7 +19,8 @@ export type UpdateSettingsName = { type: 'UPDATESETTINGSNAME', name: string };
 export type UpdateSortOrder = { type: 'UPDATESORTORDER', nodeIds: string[], linkIds: string[] };
 export type AddNode = { type: 'ADDNODE', targetNodeName: string };
 export type AddLink = { type: 'ADDLINK', sourceNodeId: string, targetNodeId: string };
-export type AddLinkAndNode = { type: 'ADDLINKANDNODE', sourceNodeId: string, targetNodeName: string };
+export type AddLinkAndNode = { type: 'ADDLINKANDNODE', sourceNodeId: string, targetNodeName: string,  targetNodeShape: number };
+export type InterposeNewNode = { type: 'INTERPOSENEWNODE', sourceLinkId: string, targetNodeName: string,  targetNodeShape: number };
 export type DeleteNode = { type: 'DELETENODE', nodeId: string };
 export type DeleteLink = { type: 'DELETELINK', linkId: string };
 export type UpdateNode = { type: 'UPDATENODE', node: NodeItem };
@@ -32,8 +33,13 @@ export type Test = { type: 'TEST'};
 
 
 export type Action = RouterNavigation | UpdateSettingsName | UpdateSortOrder | DeleteLink |
- DeleteNode | AddNode | AddLink | AddLinkAndNode | UpdateNode | UpdateLink |
+ DeleteNode | AddNode | AddLink | AddLinkAndNode | InterposeNewNode | UpdateNode | UpdateLink |
  ReadFromFile | ChangeSelection | Test | LoadItem | LoadGraph;
+
+function cloneGraphItems(state: State): { nodes: { [id: string]: NodeItem}, nlist: string[], links: { [id: string]: LinkItem}, llist: string[] } {
+  return { llist: [...state.llist ], links: {...state.links }, nlist: [...state.nlist ], nodes: {...state.nodes } };
+} 
+
 
 function fetchGraphData(backend: NodeService, state: State): Observable<State> {
   return backend.getNodes().pipe( 
@@ -191,8 +197,33 @@ export function reducer(backend: NodeService, modal: BsModalService, router: Rou
         );
       }
 
+      case 'INTERPOSENEWNODE': {
+        return backend.interposeNewNode(action.sourceLinkId, action.targetNodeName, action.targetNodeShape).pipe(
+          map((data) => {
+
+            let c = cloneGraphItems(state);
+
+            let six = c.nlist.findIndex(n => n == data.changed.target);
+            //let six = c.nlist.findIndex(n => n == data.added.link.source);
+            if (six>=0) {
+              c.nodes[data.added.node.id] = data.added.node;
+              c.nlist.splice(six, 0, data.added.node.id);
+              
+              c.links[data.added.link.id] = data.added.link;
+              
+              let lix = c.llist.findIndex(l => l == action.sourceLinkId);
+              if (lix>=0)
+                c.llist.splice(lix+1, 0, data.added.link.id);        
+
+              c.links[data.changed.id] = data.changed;
+            }
+            return ns={ ...state, nodes: c.nodes, nlist: c.nlist, links: c.links, llist: c.llist};
+          })
+        );
+      }
+
       case 'ADDLINKANDNODE': {
-        return backend.addLinkAndNode(action.sourceNodeId, action.targetNodeName).pipe(
+        return backend.addLinkAndNode(action.sourceNodeId, "", action.targetNodeName, action.targetNodeShape).pipe(
           map((data) => {
             let llist = [...state.llist ];
             let links = {...state.links };

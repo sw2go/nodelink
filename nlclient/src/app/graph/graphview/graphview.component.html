@@ -27,7 +27,9 @@
           <ng-template #nodeTemplate let-node>
             <svg:g class="node" (contextmenu)="showContextMenu(node, $event.clientX, $event.clientY)" 
                                 (dblclick)="editNode(node.id)" 
-                                (click)="selectionChanged(node.id); $event.stopPropagation();">
+                                (click)="selectionChanged(node.id); $event.stopPropagation();"
+                                (dragover)="dragOver($event)"
+                                (drop)="dropOnNode($event, node.id)">
 
               <!--
 
@@ -139,7 +141,13 @@
           </ng-template>
 
           <ng-template #linkTemplate let-link>              
-            <svg:g class="edge" (contextmenu)="showContextMenu(link, $event.clientX, $event.clientY)" (click)="selectionChanged(link.id); $event.stopPropagation();">
+            <svg:g class="edge" 
+              (contextmenu)="showContextMenu(link, $event.clientX, $event.clientY)" 
+              (click)="selectionChanged(link.id); $event.stopPropagation();"
+              (dragover)="dragOver($event)"
+              (drop)="dropOnLink($event, link.id)"                          
+              >
+
               <svg:path 
                 class="line" 
                 [attr.stroke-width]="(selectedId() == link.id) ? '3' : '2'" 
