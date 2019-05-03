@@ -61,8 +61,8 @@ export class GraphContextComponent implements OnInit {
     this.modal.show(ModalAddNodeComponent, config);  
   }
 
-  dragStart(e: DragEvent, shape: string) {
-    e.dataTransfer.setData('text', shape) ;
+  dragStart(e: DragEvent, shape: number) {
+    e.dataTransfer.setData('text', shape.toString());
     e.dataTransfer.effectAllowed = "move";
     console.log("dragstart: " + shape )
   }

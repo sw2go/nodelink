@@ -72,8 +72,11 @@ Hack Solution in graph.component.ts!
 -> add to the if (!oldLink) { } the following "else"
    else {   // solution for "link-labels were not updated ..."
      let edge = this.graph.edges.find(nl => `${nl.source}${nl.target}` === normKey) || edgeLabel;
-     if (edge)
-     oldLink.label = edge.label;   // maybe add others if they need to be displayed in graph
+     if (edge) {
+       oldLink.label = edge.label;   // maybe add others if they need to be displayed in graph
+       oldLink.source = edge.source;
+       oldLink.target = edge.target;
+     }
    }
 
 Fix 3: svg href in textPath works in Chrome but fails in Firefox

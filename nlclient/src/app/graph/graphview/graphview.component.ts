@@ -155,15 +155,20 @@ export class GraphviewComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   dropOnNode(e: DragEvent, nodeId: string) {
+    e.preventDefault();
+    console.log("----------------" + nodeId);
     let shape: number = parseInt(e.dataTransfer.getData("text"));
-    this.store.sendAction({type: "ADDLINKANDNODE", sourceNodeId: nodeId, targetNodeName: null, targetNodeShape: shape }).subscribe(
+    this.store.sendAction({type: "ADDLINKANDNODE", sourceNodeId: nodeId, targetNodeName: null, targetNodeShape: shape })
+    .subscribe(
       x => setTimeout(this.relayout,50, this.graph.graph, this.store)
     );
   }
 
   dropOnLink(e: DragEvent, linkId: string) {
+    e.preventDefault();
     let shape: number = parseInt(e.dataTransfer.getData("text"));
-    this.store.sendAction({type: "INTERPOSENEWNODE", sourceLinkId: linkId, targetNodeName: null, targetNodeShape: shape }).subscribe(
+    this.store.sendAction({type: "INTERPOSENEWNODE", sourceLinkId: linkId, targetNodeName: null, targetNodeShape: shape })
+    .subscribe(
       x => setTimeout(this.relayout,50, this.graph.graph, this.store)
     );
   }
